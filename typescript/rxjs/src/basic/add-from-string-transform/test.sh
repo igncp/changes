@@ -1,6 +1,14 @@
-# compile src if there are unstaged changes (modifications or new files)
-if [ $(git status --porcelain src | grep -E "^[  ]|\?" | wc -l) -ne "0" ]; then
-  npm run build_cjs
-fi
+# compile if there are unstaged changes (modifications or new files)
+compile_if_changes() {
+  DIR=$1
+  CMD=$2
 
-npm run build_spec && ./node_modules/.bin/mocha --opts spec/support/default.opts spec-js/observables/fromStringTransform-spec.js
+  if [ $(git status --porcelain $DIR | grep -E "^[  ]|\?" | wc -l) -ne "0" ]; then
+    eval "$CMD"
+  fi
+}
+
+compile_if_changes src "npm run build_cjs"
+compile_if_changes spec "npm run build_spec"
+
+./node_modules/.bin/mocha --opts spec/support/default.opts spec-js/observables/fromStringTransform-spec.js
