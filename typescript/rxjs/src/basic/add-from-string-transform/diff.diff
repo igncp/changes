@@ -1,0 +1,118 @@
+diff --git a/spec/observables/fromStringTransform-spec.ts b/spec/observables/fromStringTransform-spec.ts
+new file mode 100644
+index 0000000..b10f097
+--- /dev/null
++++ b/spec/observables/fromStringTransform-spec.ts
+@@ -0,0 +1,43 @@
++import {expect} from 'chai';
++import * as Rx from '../../dist/cjs/Rx';
++
++declare const {asDiagram, expectObservable, Symbol, type};
++declare const rxTestScheduler: Rx.TestScheduler;
++const Observable = Rx.Observable;
++
++/** @test {from} */
++describe('Observable.fromStringTransform', () => {
++  // asDiagram('from([10, 20, 30])')
++  // ('should create an observable from an array', () => {
++    // const e1 = Observable.from([10, 20, 30])
++      // // for the purpose of making a nice diagram, spread out the synchronous emissions
++      // .concatMap((x, i) => Observable.of(x).delay(i === 0 ? 0 : 20, rxTestScheduler));
++    // const expected = 'x-y-(z|)';
++    // expectObservable(e1).toBe(expected, {x: 10, y: 20, z: 30});
++  // });
++
++  it('should throw for non strings', () => {
++    expect(() => Observable.fromStringTransform(<any>{}).subscribe()).to.throw();
++    expect(() => Observable.fromStringTransform(<any>1).subscribe()).to.throw();
++  });
++
++  it('should return Observable<string> as type', () => {
++    type(() => {
++      /* tslint:disable:no-unused-variable */
++      let o1: Rx.Observable<string> = Observable.fromStringTransform("foo");
++      /* tslint:enable:no-unused-variable */
++    });
++  });
++
++  it('should return the expected result', () => {
++    const str = "foo-bar";
++    const expected = ["f", "o", "o", "b", "a", "r"];
++    const obv = Rx.Observable.fromStringTransform(str);
++
++    obv.subscribe((val) => {
++      expect(val).to.equal(expected.shift());
++    });
++  })
++
++});
++
+diff --git a/src/Rx.ts b/src/Rx.ts
+index 4978b8e..ec0018c 100644
+--- a/src/Rx.ts
++++ b/src/Rx.ts
+@@ -19,6 +19,7 @@ import './add/observable/from';
+ import './add/observable/fromEvent';
+ import './add/observable/fromEventPattern';
+ import './add/observable/fromPromise';
++import './add/observable/fromStringTransform';
+ import './add/observable/generate';
+ import './add/observable/if';
+ import './add/observable/interval';
+diff --git a/src/add/observable/fromStringTransform.ts b/src/add/observable/fromStringTransform.ts
+new file mode 100644
+index 0000000..ec96766
+--- /dev/null
++++ b/src/add/observable/fromStringTransform.ts
+@@ -0,0 +1,11 @@
++import { Observable } from '../../Observable';
++import { fromStringTransform as staticFromStringTransform } from '../../observable/fromStringTransform';
++
++Observable.fromStringTransform = staticFromStringTransform;
++
++declare module '../../Observable' {
++  namespace Observable {
++    export let fromStringTransform: typeof staticFromStringTransform;
++  }
++}
++
+diff --git a/src/observable/FromObservable.ts b/src/observable/FromObservable.ts
+index 10f6bc6..f2fedb1 100644
+--- a/src/observable/FromObservable.ts
++++ b/src/observable/FromObservable.ts
+@@ -98,6 +98,26 @@ export class FromObservable<T> extends Observable<T> {
+     throw new TypeError((ish !== null && typeof ish || ish) + ' is not observable');
+   }
+ 
++  /*
++   * Creates an observable from an string, emitting each letter and omitting hyphens
++   *
++   * @example <caption>Convert a string into an observable</caption>
++   * var str = "foo-bar-baz";
++   * var result = Rx.Observable.from(str);
++   * result.subscribe(x => console.log(x)); // "f", "o", "o", "b", "a", ...
++   *
++   */
++  static createFromStringTransform(ish: ObservableInput<string>, scheduler?: Scheduler): Observable<string> {
++    if (typeof ish === 'string') {
++      const strArr = (<string>ish)
++        .split("")
++        .filter((val) => val !== "-");
++      return new ArrayObservable<string>(strArr, scheduler);
++    }
++
++    throw new TypeError(`${ish} is not a string`);
++  }
++
+   protected _subscribe(subscriber: Subscriber<T>) {
+     const ish = this.ish;
+     const scheduler = this.scheduler;
+diff --git a/src/observable/fromStringTransform.ts b/src/observable/fromStringTransform.ts
+new file mode 100644
+index 0000000..d5f6476
+--- /dev/null
++++ b/src/observable/fromStringTransform.ts
+@@ -0,0 +1,3 @@
++import {  FromObservable  } from './FromObservable';
++
++export const fromStringTransform = FromObservable.createFromStringTransform;
