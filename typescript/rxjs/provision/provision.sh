@@ -49,6 +49,8 @@ alias Serve="http-server -c-1 -p9000"
 
 GitReset() { git reset --hard $@ ; git clean -fd :/; npm run build_cjs; npm run build_spec; }
 GitDiff() { git add -A .; git diff HEAD; }
+GitApply() { GitReset; git apply $1; npm run build_cjs; npm run build_spec; }
+alias GitStatus='git status -u'
 
 Update_src() {
   rm -rf /project/src
@@ -297,6 +299,12 @@ if [ ! -d ~/repository ]; then
   git clone https://github.com/ReactiveX/rxjs.git ~/repository
   cd ~/repository
   git reset --hard f63dde9fed73
+fi
+
+if ! type ghi > /dev/null 2>&1; then
+  curl -sL https://raw.githubusercontent.com/stephencelis/ghi/master/ghi > ghi && \
+    chmod 755 ghi && \
+    sudo mv ghi /usr/local/bin
 fi
 
 if ! type ghostscript > /dev/null 2>&1; then

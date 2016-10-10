@@ -1,0 +1,220 @@
+diff --git a/spec/schedulers/FooScheduler-spec.ts b/spec/schedulers/FooScheduler-spec.ts
+new file mode 100644
+index 0000000..9cb1e33
+--- /dev/null
++++ b/spec/schedulers/FooScheduler-spec.ts
+@@ -0,0 +1,88 @@
++import {expect} from 'chai';
++import * as Rx from '../../dist/cjs/Rx';
++
++const asap = Rx.Scheduler.asap;
++
++/** @test {Scheduler} */
++describe('Scheduler.asap', () => {
++  it('should exist', () => {
++    expect(asap).exist;
++  });
++
++  it('should schedule an action to happen later', (done: MochaDone) => {
++    let actionHappened = false;
++    asap.schedule(() => {
++      actionHappened = true;
++      done();
++    });
++    if (actionHappened) {
++      done(new Error('Scheduled action happened synchronously'));
++    }
++  });
++
++  it('should execute recursively scheduled actions in separate asynchronous contexts', (done: MochaDone) => {
++    let syncExec1 = true;
++    let syncExec2 = true;
++    asap.schedule(function (index) {
++      if (index === 0) {
++        this.schedule(1);
++        asap.schedule(() => { syncExec1 = false; });
++      } else if (index === 1) {
++        this.schedule(2);
++        asap.schedule(() => { syncExec2 = false; });
++      } else if (index === 2) {
++        this.schedule(3);
++      } else if (index === 3) {
++        if (!syncExec1 && !syncExec2) {
++          done();
++        } else {
++          done(new Error('Execution happened synchronously.'));
++        }
++      }
++    }, 0, 0);
++  });
++
++  it('should cancel the setImmediate if all scheduled actions unsubscribe before it executes', (done: MochaDone) => {
++    let asapExec1 = false;
++    let asapExec2 = false;
++    const action1 = asap.schedule(() => { asapExec1 = true; });
++    const action2 = asap.schedule(() => { asapExec2 = true; });
++    expect(asap.scheduled).to.exist;
++    expect(asap.actions.length).to.equal(2);
++    action1.unsubscribe();
++    action2.unsubscribe();
++    expect(asap.actions.length).to.equal(0);
++    expect(asap.scheduled).to.equal(undefined);
++    asap.schedule(() => {
++      expect(asapExec1).to.equal(false);
++      expect(asapExec2).to.equal(false);
++      done();
++    });
++  });
++
++  it('should execute the rest of the scheduled actions if the first action is canceled', (done: MochaDone) => {
++    let actionHappened = false;
++    let firstSubscription = null;
++    let secondSubscription = null;
++
++    firstSubscription = asap.schedule(() => {
++      actionHappened = true;
++      if (secondSubscription) {
++        secondSubscription.unsubscribe();
++      }
++      done(new Error('The first action should not have executed.'));
++    });
++
++    secondSubscription = asap.schedule(() => {
++      if (!actionHappened) {
++        done();
++      }
++    });
++
++    if (actionHappened) {
++      done(new Error('Scheduled action happened synchronously'));
++    } else {
++      firstSubscription.unsubscribe();
++    }
++  });
++});
+diff --git a/src/Rx.ts b/src/Rx.ts
+index 4978b8e..dc218ac 100644
+--- a/src/Rx.ts
++++ b/src/Rx.ts
+@@ -166,10 +166,12 @@ export {AjaxRequest, AjaxResponse, AjaxError, AjaxTimeoutError} from './observab
+ import { asap } from './scheduler/asap';
+ import { async } from './scheduler/async';
+ import { queue } from './scheduler/queue';
++import { foo } from './scheduler/foo';
+ import { animationFrame } from './scheduler/animationFrame';
+ import { AsapScheduler } from './scheduler/AsapScheduler';
+ import { AsyncScheduler } from './scheduler/AsyncScheduler';
+ import { QueueScheduler } from './scheduler/QueueScheduler';
++import { FooScheduler } from './scheduler/FooScheduler';
+ import { AnimationFrameScheduler } from './scheduler/AnimationFrameScheduler';
+ import { $$rxSubscriber as rxSubscriber } from './symbol/rxSubscriber';
+ import { $$iterator as iterator } from './symbol/iterator';
+@@ -194,7 +196,8 @@ let Scheduler = {
+   asap,
+   queue,
+   animationFrame,
+-  async
++  async,
++  foo
+ };
+ 
+ /**
+diff --git a/src/scheduler/FooAction.ts b/src/scheduler/FooAction.ts
+new file mode 100644
+index 0000000..5b136c3
+--- /dev/null
++++ b/src/scheduler/FooAction.ts
+@@ -0,0 +1,46 @@
++import { Immediate } from '../util/Immediate';
++import { AsyncAction } from './AsyncAction';
++import { FooScheduler } from './FooScheduler';
++
++/**
++ * We need this JSDoc comment for affecting ESDoc.
++ * @ignore
++ * @extends {Ignored}
++ */
++export class FooAction<T> extends AsyncAction<T> {
++
++  constructor(protected scheduler: FooScheduler,
++              protected work: (state?: T) => void) {
++    super(scheduler, work);
++  }
++
++  protected requestAsyncId(scheduler: FooScheduler, id?: any, delay: number = 0): any {
++    // If delay is greater than 0, request as an async action.
++    if (delay !== null && delay > 0) {
++      return super.requestAsyncId(scheduler, id, delay);
++    }
++    // Push the action to the end of the scheduler queue.
++    scheduler.actions.push(this);
++    // If a microtask has already been scheduled, don't schedule another
++    // one. If a microtask hasn't been scheduled yet, schedule one now. Return
++    // the current scheduled microtask id.
++    return scheduler.scheduled || (scheduler.scheduled = Immediate.setImmediate(
++      scheduler.flush.bind(scheduler, null)
++    ));
++  }
++  protected recycleAsyncId(scheduler: FooScheduler, id?: any, delay: number = 0): any {
++    // If delay exists and is greater than 0, recycle as an async action.
++    if (delay !== null && delay > 0) {
++      return super.recycleAsyncId(scheduler, id, delay);
++    }
++    // If the scheduler queue is empty, cancel the requested microtask and
++    // set the scheduled flag to undefined so the next FooAction will schedule
++    // its own.
++    if (scheduler.actions.length === 0) {
++      Immediate.clearImmediate(id);
++      scheduler.scheduled = undefined;
++    }
++    // Return undefined so the action knows to request a new async id if it's rescheduled.
++    return undefined;
++  }
++}
+diff --git a/src/scheduler/FooScheduler.ts b/src/scheduler/FooScheduler.ts
+new file mode 100644
+index 0000000..7310824
+--- /dev/null
++++ b/src/scheduler/FooScheduler.ts
+@@ -0,0 +1,31 @@
++import { AsyncAction } from './AsyncAction';
++import { AsyncScheduler } from './AsyncScheduler';
++
++export class FooScheduler extends AsyncScheduler {
++  public flush(): void {
++
++    this.active = true;
++    this.scheduled = undefined;
++
++    const {actions} = this;
++    let error: any;
++    let index: number = -1;
++    let count: number = actions.length;
++    let action: AsyncAction<any> = actions.shift();
++
++    do {
++      if (error = action.execute(action.state, action.delay)) {
++        break;
++      }
++    } while (++index < count && (action = actions.shift()));
++
++    this.active = false;
++
++    if (error) {
++      while (++index < count && (action = actions.shift())) {
++        action.unsubscribe();
++      }
++      throw error;
++    }
++  }
++}
+diff --git a/src/scheduler/foo.ts b/src/scheduler/foo.ts
+new file mode 100644
+index 0000000..c4d7820
+--- /dev/null
++++ b/src/scheduler/foo.ts
+@@ -0,0 +1,4 @@
++import { FooAction } from './FooAction';
++import { FooScheduler } from './FooScheduler';
++
++export const foo = new FooScheduler(FooAction);

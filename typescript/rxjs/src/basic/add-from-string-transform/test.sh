@@ -3,7 +3,7 @@ compile_if_changes() {
   DIR=$1
   CMD=$2
 
-  if [ $(git status --porcelain $DIR | grep -E "^[  ]|\?" | wc -l) -ne "0" ]; then
+  if [ $(git status --porcelain $DIR | grep -E "^[  ]|^\?|^AM" | wc -l) -ne "0" ]; then
     eval "$CMD"
   fi
 }

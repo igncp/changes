@@ -11,4 +11,4 @@ compile_if_changes() {
 compile_if_changes src "npm run build_cjs"
 compile_if_changes spec "npm run build_spec"
 
-./node_modules/.bin/mocha --opts spec/support/default.opts spec-js/operators/foo-spec.js
+./node_modules/.bin/mocha --opts spec/support/default.opts spec-js/schedulers/FooScheduler-spec.js
