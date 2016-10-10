@@ -12,6 +12,7 @@ To try them:
 There are helper commands defined in the `~/.bashrc`:
 - To reset to the original state of the repository
 - To generate a diff from the changes in the repository
+- To apply git changes in the repository from an existing diff
 - To update the `src` files in the host with the ones in the VM
 
 ## License
