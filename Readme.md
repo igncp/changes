@@ -7,7 +7,7 @@ To try them:
 - `cd` to a project directory and `vagrant up`
 - Once the VM is provisioned: `vagrant ssh`
 - Then you will be inside the VM. You can `cd ~/repository` and apply changes.
-- For example: `git apply ~/src/lanaguage/project/changes1/diff.diff`
+- For example: `git apply ~/src/language/project/changes1/diff.diff`
 
 There are helper commands defined in the `~/.bashrc`:
 - To reset to the original state of the repository
