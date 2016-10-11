@@ -1,0 +1,28 @@
+diff --git a/protractor.conf.js b/protractor.conf.js
+index b740ab3..d1b9848 100644
+--- a/protractor.conf.js
++++ b/protractor.conf.js
+@@ -1,21 +1,9 @@
+ var httpServer = require('http-server');
+ 
+ exports.config = {
+-  directConnect: true,
+-
+   capabilities: {
+-    browserName: 'chrome',
+-    chromeOptions: {
+-      //Important for benchpress to get timeline data from the browser
+-      'args': ['--js-flags=--expose-gc'],
+-      'perfLoggingPrefs': {
+-        'traceCategories': 'v8,blink.console,disabled-by-default-devtools.timeline'
+-      }
+-    },
+-    loggingPrefs: {
+-      performance: 'ALL',
+-      browser: 'ALL'
+-    }
++    browserName: 'phantomjs',
++    'phantomjs.ghostdriver.cli.args': ['--loglevel=DEBUG']
+   },
+ 
+   specs: ['perf/macro/**/*.spec.js'],

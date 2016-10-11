@@ -1,0 +1,74 @@
+diff --git a/spec/operators/partition-spec.ts b/spec/operators/partition-spec.ts
+index 38be573..1e27611 100644
+--- a/spec/operators/partition-spec.ts
++++ b/spec/operators/partition-spec.ts
+@@ -28,22 +28,21 @@ describe('Observable.prototype.partition', () => {
+   it('should partition an observable into two using a predicate', () => {
+     const e1 =    hot('--a-b---a------d--a---c--|');
+     const e1subs =    '^                        !';
+-    const expected = ['--a-----a---------a------|',
+-                    '----b----------d------c--|'];
++    const expected = ['----b----------d------c--|',
++                    '--a-----a---------a------|'];
+ 
+-    function predicate(x) {
+-      return x === 'a';
+-    }
++    const predicate = (val, idx) => idx % 2 !== 0;
+ 
+     expectObservableArray(e1.partition(predicate), expected);
+     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
+   });
+ 
+   it('should pass errors to both returned observables', () => {
+-    const e1 =    hot('--a-b---#');
+-    const e1subs =    '^       !';
+-    const expected = ['--a-----#',
+-                    '----b---#'];
++    // if two errors are indicated, it stops in the first one
++    const e1 =    hot('--a-b-#-#');
++    const e1subs =    '^     !';
++    const expected = ['--a---#',
++                    '----b-#'];
+ 
+     function predicate(x) {
+       return x === 'a';
+@@ -73,11 +72,10 @@ describe('Observable.prototype.partition', () => {
+     const expected = ['--a----#   ',
+                     '----b--#   '];
+ 
+-    let index = 0;
+     const error = 'error';
+-    function predicate(x) {
++    function predicate(x, idx) {
+       const match = x === 'a';
+-      if (match && index++ > 1) {
++      if (match && idx > 1) {
+         throw error;
+       }
+       return match;
+@@ -143,7 +141,7 @@ describe('Observable.prototype.partition', () => {
+     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
+   });
+ 
+-  it('should partition if predicate does not match all of source elements', () => {
++  it('should partition if predicate does not match any of source elements', () => {
+     const e1 =    hot('--b--b--b--b--b--b--b--|');
+     const e1subs =    '^                      !';
+     const expected = ['-----------------------|',
+@@ -157,7 +155,7 @@ describe('Observable.prototype.partition', () => {
+     expectSubscriptions(e1.subscriptions).toBe([e1subs, e1subs]);
+   });
+ 
+-  it('should partition to infinite observable if source does not completes', () => {
++  it('should partition to infinite observable if source does not complete', () => {
+     const e1 =    hot('--a-b---a------d----');
+     const e1subs =    '^                   ';
+     const expected = ['--a-----a-----------',
+@@ -225,4 +223,4 @@ describe('Observable.prototype.partition', () => {
+     const e1 = hot('--a-b---a------d----');
+     expect(e1.partition).to.throw();
+   });
+-});
+\ No newline at end of file
++});

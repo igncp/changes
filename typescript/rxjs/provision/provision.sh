@@ -47,7 +47,7 @@ alias EditProvision="vim /project/provision/provision.sh && provision.sh"
 alias Exit="killall tmux"
 alias Serve="http-server -c-1 -p9000"
 
-GitReset() { git reset --hard $@ ; git clean -fd :/; npm run build_cjs; npm run build_spec; }
+GitReset() { git reset --hard $@ ; git clean -fd :/; npm run build_cjs; rm -rf ~/repository/spec-js; npm run build_spec; }
 GitDiff() { git add -A .; git diff HEAD; }
 GitApply() { GitReset; git apply $1; npm run build_cjs; npm run build_spec; }
 alias GitStatus='git status -u'
@@ -97,7 +97,7 @@ if [ ! -f ~/node-installation-finished ]; then
     touch ~/node-installation-finished
 fi
 
-GLOBAL_NPM_MODULES=(http-server tslint typescript)
+GLOBAL_NPM_MODULES=(http-server tslint typescript phantomjs chromedriver)
 
 for MODULE_NAME in "${GLOBAL_NPM_MODULES[@]}"; do
   if [ ! -d ~/.nodenv/versions/$NODE_VERSION/lib/node_modules/$MODULE_NAME ]; then
@@ -113,6 +113,7 @@ if ! type java > /dev/null 2>&1 ; then
   echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
   sudo apt-get install -y oracle-java8-installer
 fi
+
 
 if ! type pip > /dev/null  ; then
   echo "installing python tools"
@@ -163,6 +164,7 @@ install_vim_package scrooloose/syntastic
 install_vim_package shougo/neocomplete.vim "sudo apt-get install -y vim-nox"
 install_vim_package shougo/neosnippet.vim
 install_vim_package shougo/vimproc.vim "cd ~/.vim/bundle/vimproc.vim && make; cd -"
+install_vim_package terryma/vim-multiple-cursors
 install_vim_package vim-airline/vim-airline
 install_vim_package vim-airline/vim-airline-themes
 install_vim_package vim-scripts/cream-showinvisibles
@@ -219,6 +221,14 @@ let g:vim_markdown_folding_disabled = 1
 let g:vim_markdown_conceal = 0
 let g:NERDSpaceDelims = 1
 
+" multiple-cursors
+  let g:multi_cursor_quit_key='<C-c>'
+  nnoremap <C-c> :call multiple_cursors#quit()<CR>
+  " quick console.log , once it finishes: <C-n> s
+  let ConsoleMapping="nnoremap <leader>k iconsole.log('a', a);<C-c>hhhhhhh :call multiple_cursors#new('n', 0)<CR>"
+  autocmd FileType javascript :exe ConsoleMapping
+  autocmd FileType typescript :exe ConsoleMapping
+
 " ctrlp
   let g:ctrlp_map = '<c-p>'
   let g:ctrlp_cmd = 'CtrlP'
@@ -247,6 +257,7 @@ let g:NERDSpaceDelims = 1
   let g:syntastic_style_error_symbol = '⁉️'
   hi Error ctermbg=lightred ctermfg=black
   hi SpellBad ctermbg=lightred ctermfg=black
+  nnoremap <leader>j :SyntasticToggleMode<CR>
 
 map ,e :e <C-R>=expand("%:p:h") . "/" <CR>
 
