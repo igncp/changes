@@ -1,0 +1,88 @@
+diff --git a/src/Main.hs b/src/Main.hs
+index 2278478..ed7f06e 100644
+--- a/src/Main.hs
++++ b/src/Main.hs
+@@ -15,17 +15,18 @@ import           Data.Version                 (showVersion)
+ import qualified Options.Applicative          as OA
+ import           Patat.Presentation
+ import qualified Paths_patat
++import           Prelude
+ import qualified System.Console.ANSI          as Ansi
+ import           System.Directory             (getModificationTime)
+ import           System.Exit                  (exitFailure)
+ import qualified System.IO                    as IO
+ import qualified Text.PrettyPrint.ANSI.Leijen as PP
+-import           Prelude
+ 
+ 
+ --------------------------------------------------------------------------------
+ data Options = Options
+-    { oFilePath :: !FilePath
++    { oVersion  :: !Bool
++    , oFilePath :: Maybe FilePath
+     , oForce    :: !Bool
+     , oDump     :: !Bool
+     , oWatch    :: !Bool
+@@ -35,7 +36,11 @@ data Options = Options
+ --------------------------------------------------------------------------------
+ parseOptions :: OA.Parser Options
+ parseOptions = Options
+-    <$> (OA.strArgument $
++    <$> (OA.flag False True $
++            OA.long    "version" <>
++            OA.short   'v' <>
++            OA.help    "Display current version")
++    <*> (OA.optional $ OA.strArgument $
+             OA.metavar "FILENAME" <>
+             OA.help    "Input file")
+     <*> (OA.switch $
+@@ -96,18 +101,33 @@ assertAnsiFeatures = do
+ --------------------------------------------------------------------------------
+ main :: IO ()
+ main = do
+-    options   <- OA.execParser parserInfo
+-    errOrPres <- readPresentation (oFilePath options)
+-    pres      <- either (errorAndExit . return) return errOrPres
++    options <- OA.execParser parserInfo
++    case (oFilePath options) of
++      Nothing  -> parseNoFileName options
++      Just val -> parseFileName val options
+ 
+-    unless (oForce options) assertAnsiFeatures
+ 
+-    if oDump options
+-        then dumpPresentation pres
+-        else interactiveLoop options pres
++--------------------------------------------------------------------------------
++parseNoFileName :: Options -> IO ()
++parseNoFileName options = case (oVersion options) of
++  False -> putStrLn "Use --help to learn how to use patat"
++  True  -> putStrLn $ showVersion Paths_patat.version
++
++
++--------------------------------------------------------------------------------
++parseFileName :: FilePath -> Options ->  IO ()
++parseFileName val options = do
++  errOrPres <- readPresentation val
++  pres      <- either (errorAndExit . return) return errOrPres
++
++  unless (oForce options) assertAnsiFeatures
++
++  if oDump options
++      then dumpPresentation pres
++      else interactiveLoop pres
+ 
+   where
+-    interactiveLoop options pres0 = do
++    interactiveLoop pres0 = do
+         IO.hSetBuffering IO.stdin IO.NoBuffering
+         commandChan <- Chan.newChan
+ 
+@@ -135,3 +155,4 @@ main = do
+                     ErroredPresentation err   -> errorAndExit [err]
+ 
+         loop pres0
++
+diff --git a/test.sh b/test.sh
+old mode 100644
+new mode 100755
