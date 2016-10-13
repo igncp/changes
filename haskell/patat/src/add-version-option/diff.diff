@@ -1,5 +1,5 @@
 diff --git a/src/Main.hs b/src/Main.hs
-index 2278478..ed7f06e 100644
+index 2278478..d88b88d 100644
 --- a/src/Main.hs
 +++ b/src/Main.hs
 @@ -15,17 +15,18 @@ import           Data.Version                 (showVersion)
@@ -36,52 +36,143 @@ index 2278478..ed7f06e 100644
              OA.metavar "FILENAME" <>
              OA.help    "Input file")
      <*> (OA.switch $
-@@ -96,18 +101,33 @@ assertAnsiFeatures = do
+@@ -55,25 +60,28 @@ parseOptions = Options
+ 
+ 
+ --------------------------------------------------------------------------------
++description :: PP.Doc
++description = PP.vcat
++    [ "Terminal-based presentations using Pandoc"
++    , ""
++    , "Controls:"
++    , "- Next slide:             space, enter, l, right"
++    , "- Previous slide:         backspace, h, left"
++    , "- Go forward 10 slides:   j, down"
++    , "- Go backward 10 slides:  k, up"
++    , "- First slide:            0"
++    , "- Last slide:             G"
++    , "- Reload file:            r"
++    , "- Quit:                   q"
++    ]
++
++
++--------------------------------------------------------------------------------
+ parserInfo :: OA.ParserInfo Options
+ parserInfo = OA.info (OA.helper <*> parseOptions) $
+     OA.fullDesc <>
+     OA.header ("patat v" <> showVersion Paths_patat.version) <>
+-    OA.progDescDoc (Just desc)
+-  where
+-    desc = PP.vcat
+-        [ "Terminal-based presentations using Pandoc"
+-        , ""
+-        , "Controls:"
+-        , "- Next slide:             space, enter, l, right"
+-        , "- Previous slide:         backspace, h, left"
+-        , "- Go forward 10 slides:   j, down"
+-        , "- Go backward 10 slides:  k, up"
+-        , "- First slide:            0"
+-        , "- Last slide:             G"
+-        , "- Reload file:            r"
+-        , "- Quit:                   q"
+-        ]
++    OA.progDescDoc (Just description)
+ 
+ 
+ --------------------------------------------------------------------------------
+@@ -96,42 +104,60 @@ assertAnsiFeatures = do
  --------------------------------------------------------------------------------
  main :: IO ()
  main = do
 -    options   <- OA.execParser parserInfo
 -    errOrPres <- readPresentation (oFilePath options)
--    pres      <- either (errorAndExit . return) return errOrPres
 +    options <- OA.execParser parserInfo
 +    case (oFilePath options) of
-+      Nothing  -> parseNoFileName options
-+      Just val -> parseFileName val options
- 
--    unless (oForce options) assertAnsiFeatures
- 
--    if oDump options
--        then dumpPresentation pres
--        else interactiveLoop options pres
++        Nothing  -> parseNoFileName options
++        Just val -> parseFileName val options
++
++
 +--------------------------------------------------------------------------------
 +parseNoFileName :: Options -> IO ()
 +parseNoFileName options = case (oVersion options) of
-+  False -> putStrLn "Use --help to learn how to use patat"
-+  True  -> putStrLn $ showVersion Paths_patat.version
++    False -> do
++        PP.putDoc description
++        putStrLn "\n\nUse --help to learn about its usage"
++    True  -> putStrLn $ showVersion Paths_patat.version
 +
 +
 +--------------------------------------------------------------------------------
 +parseFileName :: FilePath -> Options ->  IO ()
 +parseFileName val options = do
-+  errOrPres <- readPresentation val
-+  pres      <- either (errorAndExit . return) return errOrPres
-+
-+  unless (oForce options) assertAnsiFeatures
-+
-+  if oDump options
-+      then dumpPresentation pres
-+      else interactiveLoop pres
++    errOrPres <- readPresentation val
+     pres      <- either (errorAndExit . return) return errOrPres
  
-   where
+     unless (oForce options) assertAnsiFeatures
+ 
+     if oDump options
+         then dumpPresentation pres
+-        else interactiveLoop options pres
+-
+-  where
 -    interactiveLoop options pres0 = do
-+    interactiveLoop pres0 = do
-         IO.hSetBuffering IO.stdin IO.NoBuffering
-         commandChan <- Chan.newChan
- 
-@@ -135,3 +155,4 @@ main = do
-                     ErroredPresentation err   -> errorAndExit [err]
- 
-         loop pres0
+-        IO.hSetBuffering IO.stdin IO.NoBuffering
+-        commandChan <- Chan.newChan
+-
+-        _ <- forkIO $ forever $
+-            readPresentationCommand >>= Chan.writeChan commandChan
+-
+-        mtime0 <- getModificationTime (pFilePath pres0)
+-        let watcher mtime = do
+-                mtime' <- getModificationTime (pFilePath pres0)
+-                when (mtime' > mtime) $ Chan.writeChan commandChan Reload
+-                threadDelay (200 * 1000)
+-                watcher mtime'
+-
+-        when (oWatch options) $ do
+-            _ <- forkIO $ watcher mtime0
+-            return ()
+-
+-        let loop pres = do
+-                displayPresentation pres
+-                c      <- Chan.readChan commandChan
+-                update <- updatePresentation c pres
+-                case update of
+-                    ExitedPresentation        -> return ()
+-                    UpdatedPresentation pres' -> loop pres'
+-                    ErroredPresentation err   -> errorAndExit [err]
+-
+-        loop pres0
++        else interactiveLoop pres
++
++    where
++      interactiveLoop pres0 = do
++          IO.hSetBuffering IO.stdin IO.NoBuffering
++          commandChan <- Chan.newChan
++
++          _ <- forkIO $ forever $
++              readPresentationCommand >>= Chan.writeChan commandChan
++
++          mtime0 <- getModificationTime (pFilePath pres0)
++          let watcher mtime = do
++                  mtime' <- getModificationTime (pFilePath pres0)
++                  when (mtime' > mtime) $ Chan.writeChan commandChan Reload
++                  threadDelay (200 * 1000)
++                  watcher mtime'
++
++          when (oWatch options) $ do
++              _ <- forkIO $ watcher mtime0
++              return ()
++
++          let loop pres = do
++                  displayPresentation pres
++                  c      <- Chan.readChan commandChan
++                  update <- updatePresentation c pres
++                  case update of
++                      ExitedPresentation        -> return ()
++                      UpdatedPresentation pres' -> loop pres'
++                      ErroredPresentation err   -> errorAndExit [err]
++
++          loop pres0
 +
 diff --git a/test.sh b/test.sh
 old mode 100644
