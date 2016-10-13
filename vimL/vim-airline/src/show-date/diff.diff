@@ -1,0 +1,37 @@
+diff --git a/autoload/airline/init.vim b/autoload/airline/init.vim
+index 253c69a..1ab3523 100644
+--- a/autoload/airline/init.vim
++++ b/autoload/airline/init.vim
+@@ -79,6 +79,7 @@ function! airline#init#bootstrap()
+         \ })
+   call airline#parts#define_function('iminsert', 'airline#parts#iminsert')
+   call airline#parts#define_function('paste', 'airline#parts#paste')
++  call airline#parts#define_function('date', 'airline#parts#date')
+   call airline#parts#define_function('crypt', 'airline#parts#crypt')
+   call airline#parts#define_function('spell', 'airline#parts#spell')
+   call airline#parts#define_function('filetype', 'airline#parts#filetype')
+@@ -112,7 +113,7 @@ endfunction
+ function! airline#init#sections()
+   let spc = g:airline_symbols.space
+   if !exists('g:airline_section_a')
+-    let g:airline_section_a = airline#section#create_left(['mode', 'crypt', 'paste', 'spell', 'capslock', 'iminsert'])
++    let g:airline_section_a = airline#section#create_left(['mode', 'date', 'crypt', 'paste', 'spell', 'capslock', 'iminsert'])
+   endif
+   if !exists('g:airline_section_b')
+     let g:airline_section_b = airline#section#create(['hunks', 'branch'])
+diff --git a/autoload/airline/parts.vim b/autoload/airline/parts.vim
+index 5638379..852107c 100644
+--- a/autoload/airline/parts.vim
++++ b/autoload/airline/parts.vim
+@@ -75,6 +75,11 @@ function! airline#parts#iminsert()
+   return ''
+ endfunction
+ 
++function! airline#parts#date()
++  let l:mode = get(w:, 'airline_current_mode', '')
++  return l:mode ==# "NORMAL" ? strftime("%d/%m/%y") : ""
++endfunction
++
+ function! airline#parts#readonly()
+   if &readonly && &modifiable && !filereadable(bufname('%'))
+     return '[noperm]'

@@ -1,0 +1,21 @@
+diff --git a/autoload/airline/init.vim b/autoload/airline/init.vim
+index 253c69a..6b5c030 100644
+--- a/autoload/airline/init.vim
++++ b/autoload/airline/init.vim
+@@ -86,6 +86,7 @@ function! airline#init#bootstrap()
+         \ 'function': 'airline#parts#readonly',
+         \ 'accent': 'red',
+         \ })
++  call airline#parts#define_raw('changeslabel', 'CHANGES')
+   call airline#parts#define_raw('file', '%f%m')
+   call airline#parts#define_raw('path', '%F%m')
+   call airline#parts#define('linenr', {
+@@ -112,7 +113,7 @@ endfunction
+ function! airline#init#sections()
+   let spc = g:airline_symbols.space
+   if !exists('g:airline_section_a')
+-    let g:airline_section_a = airline#section#create_left(['mode', 'crypt', 'paste', 'spell', 'capslock', 'iminsert'])
++    let g:airline_section_a = airline#section#create_left(['mode', 'changeslabel', 'crypt', 'paste', 'spell', 'capslock', 'iminsert'])
+   endif
+   if !exists('g:airline_section_b')
+     let g:airline_section_b = airline#section#create(['hunks', 'branch'])
