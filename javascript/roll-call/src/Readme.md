@@ -1,3 +1,3 @@
 Changes:
 
-- [ ] [Change Texts To Spanish](,/change-texts-to-spanish/)
+- [ ] [Change Texts To Spanish](change-texts-to-spanish/)
