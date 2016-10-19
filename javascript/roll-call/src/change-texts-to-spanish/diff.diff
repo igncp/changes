@@ -1,0 +1,161 @@
+diff --git a/index.js b/index.js
+index a1820c3..fbf3c67 100644
+--- a/index.js
++++ b/index.js
+@@ -41,7 +41,7 @@ const waudio = require('waudio')(context)
+ const recordButton = bel `
+ <button id="record" class="ui compact labeled icon button">
+   <i class="circle icon"></i>
+-  <span>Record</span>
++  <span>Grabar</span>
+ </button>
+ `
+ 
+@@ -135,7 +135,7 @@ function enableZipDownload () {
+     .removeClass('notched circle loading red blink')
+     .addClass('download')
+   $('#record span')
+-    .text('Download Zip')
++    .text('Descargar Zip')
+ 
+   let downloadZip = () => {
+     recordButton.onclick = () => {}
+@@ -144,7 +144,7 @@ function enableZipDownload () {
+       .removeClass('download')
+       .addClass('notched circle loading')
+     $('#record span')
+-      .text('Loading...')
++      .text('Cargando...')
+ 
+     let zip = new window.JSZip()
+     let folder = zip.folder(`${window.RollCallRoom}-tracks`)
+@@ -163,7 +163,7 @@ function enableZipDownload () {
+         .removeClass('notched circle loading')
+         .addClass('download')
+       $('#record span')
+-        .text('Download Zip')
++        .text('Descargar Zip')
+ 
+       recordButton.onclick = downloadZip
+     })
+@@ -219,7 +219,7 @@ function recording (swarm, microphone) {
+         .removeClass('stop')
+         .addClass('notched circle loading')
+       $('#record span')
+-        .text('Loading...')
++        .text('Cargando...')
+ 
+       asyncLoad(zipurl).then(enableZipDownload)
+     }
+@@ -227,7 +227,7 @@ function recording (swarm, microphone) {
+       .removeClass('unmute')
+       .addClass('red blink')
+     $('#record span')
+-      .text('Stop')
++      .text('Parar')
+   }
+ 
+   function mkrpc (peer) {
+@@ -292,7 +292,7 @@ function joinRoom (room) {
+ 
+   const message = views.message({
+     icon: 'unmute',
+-    title: 'Rollcall would like to access your microphone'
++    title: 'Rollcall querria acceder a tu microfono'
+   })
+ 
+   byId('messages-container').appendChild(message)
+@@ -306,8 +306,8 @@ function joinRoom (room) {
+ 
+     message.update({
+       icon: 'notched circle loading',
+-      title: 'Hang on tight',
+-      message: 'We are establishing a connection to your room, please be patient...'
++      title: 'Permanece atento',
++      message: 'Estamos creando una conexion a tu cuarto, por favor se paciente...'
+     })
+ 
+     getRtcConfig((err, rtcConfig) => {
+@@ -373,7 +373,7 @@ function joinRoom (room) {
+       })
+ 
+       if (!audioStream) {
+-        topBar.appendChild(bel `<div class="error notice">Listening only: no audio input available.</div>`)
++        topBar.appendChild(bel `<div class="error notice">Solo escuchando: no hay una entrada de audio disponible.</div>`)
+       }
+     })
+   })
+diff --git a/lib/views.js b/lib/views.js
+index 0972ecd..7dfad4f 100644
+--- a/lib/views.js
++++ b/lib/views.js
+@@ -12,9 +12,9 @@ const random = () => Math.random().toString(36).substring(7)
+ exports.mainButtons = bel `
+ <div class="join-container">
+   <div class="ui large buttons">
+-    <button onclick=${() => { navigate('room') }} id="join-party" class="ui button">Join the Party 🎉</button>
++    <button onclick=${() => { navigate('room') }} id="join-party" class="ui button">Unete A La Fiesta 🎉</button>
+       <div class="or"></div>
+-    <button onclick=${() => { navigate(random()) }} id="create-room" class="ui button">🚪 Create New Room</button>
++    <button onclick=${() => { navigate(random()) }} id="create-room" class="ui button">🚪  Crea Un Nuevo Cuarto</button>
+   </div>
+ </div>
+ `
+@@ -26,7 +26,7 @@ const shareButton = bel `
+ `
+ 
+ const shareButtonTooltip = `
+-<p>Invite your friends to join the room</p>
++<p>Invita a tus amigos a unirse al cuarto</p>
+ <div class="ui fluid action input">
+   <input value="${window.location}">
+   <button class="ui teal icon button" aria-label="copied">
+@@ -173,7 +173,7 @@ const dragDropModal = bel `
+     <i class="file audio outline icon"></i>
+   </div>
+   <div class="content text-center">
+-    <p>Drop your audio files here</p>
++    <p>Suelta tus archivos de audio aqui</p>
+   </div>
+ </div>`
+ 
+@@ -196,24 +196,24 @@ exports.dragDrop = (onDrop) => {
+ const settingsModalView = funky `
+ <div id="settings" class="ui modal">
+     <i class="close icon"></i>
+-    <div class="header">Settings</div>
++    <div class="header">Configuracion</div>
+   <div class="image content">
+     <div class="ui two column centered stackable grid description">
+       <div class="ui form column">
+         <div class="field">
+-          <label>Name</label>
+-          <input type="text" name="username" placeholder="Enter your name" value="${item => item.username}">
++          <label>Nombre</label>
++          <input type="text" name="username" placeholder="Escribe tu nombre" value="${item => item.username}">
+         </div>
+         <div class="field">
+-          <label>Select input device</label>
++          <label>Selecciona el dispositivo de entrada</label>
+           ${item => deviceSelectField('input', item.devices)}
+         </div>
+       </div>
+     </div>
+   </div>
+   <div class="actions">
+-    <div class="ui button cancel">Cancel</div>
+-    <div class="ui button approve">Save</div>
++    <div class="ui button cancel">Cancelar</div>
++    <div class="ui button approve">Guardar</div>
+   </div>
+ </div>`
+ 
+@@ -229,7 +229,7 @@ const deviceSelectOption = (device) => bel `
+ function deviceToSelectOption (storage, device, i) {
+   return {
+     id: device.deviceId,
+-    label: device.label || `Microphone ${i}`,
++    label: device.label || `Microfono ${i}`,
+     selected: device.deviceId === storage.get('input')
+   }
+ }
