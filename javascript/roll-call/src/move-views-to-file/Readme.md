@@ -1,0 +1,1 @@
+Move all views present in the `index.js` file to `lib/views.js`. The views are considered the variables that use the `bel` package. When views are dynamic, they are factory functions in the form of get* (the previous factory functions are renamed to follow this pattern).

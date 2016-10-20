@@ -1,0 +1,128 @@
+diff --git a/index.js b/index.js
+index a1820c3..f58128b 100644
+--- a/index.js
++++ b/index.js
+@@ -25,7 +25,7 @@ const zipurl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js'
+ const storage = new UserStorage()
+ 
+ if (typeof window.AudioContext !== 'function' || typeof window.MediaRecorder !== 'function') {
+-  byId('messages-container').appendChild(views.message({
++  byId('messages-container').appendChild(views.getMessage({
+     icon: 'frown',
+     type: 'warning',
+     title: 'Your browser is not supported',
+@@ -57,7 +57,7 @@ const masterSoundOutput = waudio(true)
+ function addAudioFile (file) {
+   let audio = waudio(file)
+   audio.connect(masterSoundOutput)
+-  let elem = views.audioFile(file, audio, context)
++  let elem = views.getAudioFile(file, audio, context)
+ 
+   connectAudio(elem, audio)
+   byId('audio-container').appendChild(elem)
+@@ -290,7 +290,7 @@ function joinRoom (room) {
+     video: false
+   }
+ 
+-  const message = views.message({
++  const message = views.getMessage({
+     icon: 'unmute',
+     title: 'Rollcall would like to access your microphone'
+   })
+@@ -301,7 +301,7 @@ function joinRoom (room) {
+     if (err) console.error(err)
+ 
+     let output = waudio(audioStream ? audioStream.clone() : null)
+-    let myelem = views.remoteAudio(storage)
++    let myelem = views.getRemoteAudio(storage)
+     connectAudio(myelem, output)
+ 
+     message.update({
+@@ -337,7 +337,7 @@ function joinRoom (room) {
+         let remotes = values(swarm.peers).length
+         let publicKey = stream.peer.publicKey
+         let username = usernames[publicKey] || `Caller (${remotes})`
+-        let elem = views.remoteAudio(storage, username, publicKey)
++        let elem = views.getRemoteAudio(storage, username, publicKey)
+         connectAudio(elem, audio)
+         byId('audio-container').appendChild(elem)
+       })
+@@ -354,17 +354,17 @@ function joinRoom (room) {
+ 
+       const topBar = byId('top-bar')
+       topBar.appendChild(settingsButton)
+-      topBar.appendChild(views.shareButton())
++      topBar.appendChild(views.getShareButton())
+       topBar.appendChild(recordButton)
+ 
+-      views.settingsModal(storage).then((modal) => {
++      views.getSettingsModal(storage).then((modal) => {
+         document.body.appendChild(modal)
+         settingsButton.onclick = () => $(modal).modal('show')
+       })
+ 
+       recordButton.onclick = recording(swarm, output.stream)
+ 
+-      views.dragDrop((files) => {
++      views.getDragDrop((files) => {
+         files.forEach(file => {
+           let audio = addAudioFile(file)
+           // output.add(gain.inst)
+diff --git a/lib/views.js b/lib/views.js
+index 0972ecd..8aa109f 100644
+--- a/lib/views.js
++++ b/lib/views.js
+@@ -35,7 +35,7 @@ const shareButtonTooltip = `
+ </div>
+ `
+ 
+-exports.shareButton = () => {
++exports.getShareButton = () => {
+   let clipboard
+ 
+   $(shareButton).popup({
+@@ -76,7 +76,7 @@ const messageView = funky `
+ </div>
+ `
+ 
+-exports.message = ({title, message, icon, type}) => {
++exports.getMessage = ({title, message, icon, type}) => {
+   return messageView({
+     title, message, icon, type
+   })
+@@ -105,7 +105,7 @@ const remoteAudioView = funky `
+ </div>
+ `
+ 
+-exports.remoteAudio = (storage, username, publicKey) => {
++exports.getRemoteAudio = (storage, username, publicKey) => {
+   const el = remoteAudioView({
+     username: username || storage.get('username') || 'Me',
+     key: publicKey
+@@ -141,7 +141,7 @@ const audioFileView = funky `
+   </div>
+ </div>
+ `
+-exports.audioFile = (file, audio, context) => {
++exports.getAudioFile = (file, audio, context) => {
+   const elem = audioFileView(file.name)
+   const button = elem.querySelector('i.play-button')
+ 
+@@ -180,7 +180,7 @@ const dragDropModal = bel `
+ document.body.appendChild(dragDropModal)
+ let timeout
+ 
+-exports.dragDrop = (onDrop) => {
++exports.getDragDrop = (onDrop) => {
+   dragDrop('body', {
+     onDrop,
+     onDragOver () {
+@@ -234,7 +234,7 @@ function deviceToSelectOption (storage, device, i) {
+   }
+ }
+ 
+-exports.settingsModal = (storage) => {
++exports.getSettingsModal = (storage) => {
+   return navigator.mediaDevices.enumerateDevices().then((devices) => {
+     return devices.filter(d => d.kind === 'audioinput')
+   }).then((devices) => {
