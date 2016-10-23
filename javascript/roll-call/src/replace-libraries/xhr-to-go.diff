@@ -1,0 +1,87 @@
+diff --git a/index.js b/index.js
+index a1820c3..97bc4eb 100644
+--- a/index.js
++++ b/index.js
+@@ -1,12 +1,13 @@
+ /* global window, document, $, requestAnimationFrame, AudioContext, URL */
++require('setimmediate') // necessary for got
++
+ const createSwarm = require('killa-beez')
+ const getUserMedia = require('getusermedia')
+ const qs = require('querystring')
+ const mediaRecorder = require('media-recorder-stream')
+ const bel = require('bel')
+ const FileWriteStream = require('filestream/write')
+-const asyncLoad = require('async-load')
+-const xhr = require('xhr')
++const got = require('got')
+ const UserStorage = require('./lib/storage')
+ const views = require('./lib/views')
+ 
+@@ -221,7 +222,7 @@ function recording (swarm, microphone) {
+       $('#record span')
+         .text('Loading...')
+ 
+-      asyncLoad(zipurl).then(enableZipDownload)
++      got(zipurl).then(enableZipDownload)
+     }
+     $('button#record i')
+       .removeClass('unmute')
+@@ -258,21 +259,19 @@ function recording (swarm, microphone) {
+ }
+ 
+ function getRtcConfig (cb) {
+-  xhr({
+-    url: 'https://instant.io/rtcConfig',
++  got('https://instant.io/rtcConfig', {
+     timeout: 10000
+-  }, (err, res) => {
+-    if (err || res.statusCode !== 200) {
+-      cb(new Error('Could not get WebRTC config from server. Using default (without TURN).'))
+-    } else {
+-      var rtcConfig
+-      try {
+-        rtcConfig = JSON.parse(res.body)
+-      } catch (err) {
+-        return cb(new Error('Got invalid WebRTC config from server: ' + res.body))
+-      }
+-      cb(null, rtcConfig)
++  }).then((res) => {
++    let rtcConfig
++    try {
++      rtcConfig = JSON.parse(res.body)
++      console.log(rtcConfig)
++    } catch (err) {
++      return cb(new Error('Got invalid WebRTC config from server: ' + res.body))
+     }
++    cb(null, rtcConfig)
++  }).catch((e) => {
++    cb(new Error('Could not get WebRTC config from server. Using default (without TURN).'))
+   })
+ }
+ 
+diff --git a/package.json b/package.json
+index 2107b0b..6cd76cb 100644
+--- a/package.json
++++ b/package.json
+@@ -20,17 +20,17 @@
+   },
+   "homepage": "https://github.com/mikeal/roll-call#readme",
+   "dependencies": {
+-    "async-load": "^1.0.7",
+     "bel": "^4.4.3",
+     "clipboard": "^1.5.12",
+     "drag-drop": "^2.12.1",
+     "filestream": "^4.1.3",
+     "funky": "^1.4.0",
+     "getusermedia": "^2.0.0",
++    "got": "^6.5.0",
+     "killa-beez": "^2.4.0",
+     "media-recorder-stream": "^2.1.0",
+-    "waudio": "^2.2.0",
+-    "xhr": "^2.2.2"
++    "setimmediate": "^1.0.5",
++    "waudio": "^2.2.0"
+   },
+   "devDependencies": {
+     "beefy": "^2.1.8",
