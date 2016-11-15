@@ -1,0 +1,75 @@
+diff --git a/lib/app/lift.js b/lib/app/lift.js
+index ddbdf40..8b93f7a 100644
+--- a/lib/app/lift.js
++++ b/lib/app/lift.js
+@@ -62,9 +62,13 @@ module.exports = function lift(configOverride, cb) {
+ function _printSuccessMsg(sails) {
+ 
+   // If `config.noShip` is set, skip the startup message.
+-  if (!(sails.config.log && sails.config.log.noShip)) {
++  if (!(sails.config.log && sails.config.log.noShip) || !(sails.config.log && sails.config.log.shouldLogChanges === false)) {
+ 
+-    sails.log.ship && sails.log.ship();
++    if (sails.config.log.shouldLogChanges) {
++      sails.log.ship && sails.log.changes();
++    } else {
++      sails.log.ship && sails.log.ship();
++    }
+     sails.log.info(('Server lifted in `' + sails.config.appPath + '`'));
+     sails.log.info(chalk.underline('To see your app, visit ' + (sails._getBaseUrl() || '')));
+     sails.log.info(('To shut down Sails, press <CTRL> + C at any time.'));
+diff --git a/lib/hooks/logger/changes.js b/lib/hooks/logger/changes.js
+new file mode 100644
+index 0000000..6fc1200
+--- /dev/null
++++ b/lib/hooks/logger/changes.js
+@@ -0,0 +1,15 @@
++/**
++ * Draw a custom message from the Changes reop
++ */
++module.exports = function _drawChanges(message, log) {
++  log = log || console.log;
++
++  return function() {
++    log('');
++    log('+++');
++    log('Changes message:');
++    log(' ## ' + message + ' ## ');
++    log('+++');
++    log('');
++  };
++};
+diff --git a/lib/hooks/logger/index.js b/lib/hooks/logger/index.js
+index 5676837..4415e9b 100644
+--- a/lib/hooks/logger/index.js
++++ b/lib/hooks/logger/index.js
+@@ -4,6 +4,7 @@
+ 
+ var CaptainsLog = require('captains-log');
+ var buildShipFn = require('./ship');
++var buildChangesFn = require('./changes');
+ 
+ 
+ module.exports = function(sails) {
+@@ -18,7 +19,8 @@ module.exports = function(sails) {
+ 
+     defaults: {
+       log: {
+-        level: 'info'
++        level: 'info',
++        shouldLogChanges: true
+       }
+     },
+ 
+@@ -44,6 +46,11 @@ module.exports = function(sails) {
+         log.info
+       );
+ 
++      log.changes = buildChangesFn(
++        sails.version ? ('v' + sails.version) : '',
++        log.info
++      );
++
+       // Expose log on sails object
+       sails.log = log;
+ 
