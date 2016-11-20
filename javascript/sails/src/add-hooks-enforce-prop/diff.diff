@@ -1,0 +1,98 @@
+diff --git a/lib/app/private/loadHooks.js b/lib/app/private/loadHooks.js
+index d73cdcf..96c85f7 100644
+--- a/lib/app/private/loadHooks.js
++++ b/lib/app/private/loadHooks.js
+@@ -156,7 +156,11 @@ module.exports = function(sails) {
+         defaults: function(cb) {
+           async.each(_.without(_.keys(hooks), 'userconfig', 'moduleloader', 'userhooks'), function (id, cb) {
+             var hook = hooks[id];
+-            applyDefaults(hook);
++            if (!hook.enforce) {
++              applyDefaults(hook);
++            } else {
++              sails.config = hook.enforce();
++            }
+             // Defer to next tick to allow other stuff to happen
+             process.nextTick(cb);
+           }, cb);
+diff --git a/lib/hooks/index.js b/lib/hooks/index.js
+index d24a659..f42cc5e 100644
+--- a/lib/hooks/index.js
++++ b/lib/hooks/index.js
+@@ -109,6 +109,19 @@ module.exports = function(sails) {
+       return {};
+     };
+ 
++
++
++    /**
++     * `enforce`
++     *
++     * Replaces the current config of sails.
++     *
++     * Hooks may override this property with a function.
++     *
++     * @type {Function}
++     */
++    this.enforce = null;
++
+     /**
+      * `configure`
+      *
+diff --git a/test/fixtures/customHooks.js b/test/fixtures/customHooks.js
+index 7fffe1c..c09a5b0 100644
+--- a/test/fixtures/customHooks.js
++++ b/test/fixtures/customHooks.js
+@@ -1,3 +1,5 @@
++var _ = require("lodash");
++
+ /**
+  * Stub custom hooks for use in tests.
+  *
+@@ -53,6 +55,16 @@ module.exports = {
+     };
+   },
+ 
++  ENFORCES_FN: function(sails) {
++    return {
++      identity: 'enforce_fn',
++      enforce: function() {
++        var previousConfigFiltered = _.omit(sails.config, ["inky"]);
++        return _.merge(previousConfigFiltered, {foo: "bar"});
++      }
++    };
++  },
++
+   // Hook to test `initialize` function
+   INIT_FN: function(sails) {
+     return {
+diff --git a/test/unit/app.initializeHooks.test.js b/test/unit/app.initializeHooks.test.js
+index 3027617..8573458 100644
+--- a/test/unit/app.initializeHooks.test.js
++++ b/test/unit/app.initializeHooks.test.js
+@@ -138,6 +138,25 @@ describe('app.initializeHooks()', function() {
+ 
+   });
+ 
++  describe('configured with a custom hook with a `enforce` function', function() {
++    var sails = $Sails.load({
++      hooks: {
++        enforce_fn: customHooks.ENFORCES_FN
++      },
++      inky: {
++        pinky: 'boo'
++      }
++    });
++
++    it('should add a `foo` key to sails config', function() {
++      assert(sails.config.foo == 'bar');
++    });
++
++    it('should not contain the config props', function() {
++      assert(sails.config.hasOwnProperty('inky') === false);
++    });
++
++  });
+   describe('configured with a custom hook with a `defaults` function', function() {
+     var sails = $Sails.load({
+       hooks: {

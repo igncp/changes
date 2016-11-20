@@ -1,0 +1,3417 @@
+diff --git a/README.md b/README.md
+index c4c39d3..2a57316 100644
+--- a/README.md
++++ b/README.md
+@@ -47,7 +47,7 @@ $ sails lift
+ 
+ Sails is built on [Node.js](http://nodejs.org/), [Connect](http://www.senchalabs.org/connect/), [Express](http://expressjs.com/), and [Socket.io](http://socket.io/).
+ 
+-Sails [controllers](http://sailsjs.org/documentation/concepts/controllers) are compatible with Connect middleware, so in most cases, you can paste code into Sails from an existing Express project and everything will work-- plus you'll be able to use WebSockets to talk to your API, and vice versa.
++Sails [rockets](http://sailsjs.org/documentation/concepts/rockets) are compatible with Connect middleware, so in most cases, you can paste code into Sails from an existing Express project and everything will work-- plus you'll be able to use WebSockets to talk to your API, and vice versa.
+ 
+ The ORM, [Waterline](https://github.com/balderdashy/waterline), has a well-defined adapter system for supporting all kinds of datastores.  Officially supported databases include [MySQL](https://github.com/balderdashy/sails-mysql), [PostgreSQL](https://github.com/balderdashy/sails-postgresql), [MongoDB](https://github.com/balderdashy/sails-mongo), [Redis](https://github.com/balderdashy/sails-redis), local [disk](https://github.com/balderdashy/sails-disk), and local [memory](https://github.com/balderdashy/sails-memory).  [Community adapters](https://github.com/balderdashy/sails-docs/blob/master/contributing/intro-to-custom-adapters.md#notable-community-adapters) exist for [CouchDB](https://github.com/search?q=sails+couch&nwo=codeswarm%2Fsails-couchdb-orm&search_target=global&ref=cmdform), [neDB](https://github.com/adityamukho/sails-nedb), [TingoDB](https://github.com/andyhu/sails-tingo), [SQLite](https://github.com/AndrewJo/sails-sqlite3/tree/0.10), [Oracle](https://github.com/search?utf8=%E2%9C%93&q=%22sails+oracle%22+OR+%22waterline+oracle%22&type=Repositories&ref=searchresults), [MSSQL](https://github.com/misterGF/sails-mssqlserver), [DB2](https://github.com/search?q=sails+db2&type=Repositories&ref=searchresults), [ElasticSearch](https://github.com/search?q=%28elasticsearch+AND+sails%29+OR+%28elasticsearch+AND+waterline%29+&type=Repositories&ref=searchresults), [Riak](https://github.com/search?q=sails+riak&type=Repositories&ref=searchresults),
+ [neo4j](https://www.npmjs.org/package/sails-neo4j), [OrientDB](https://github.com/appscot/sails-orientdb),
+diff --git a/ROADMAP.md b/ROADMAP.md
+index 07cde03..a602669 100644
+--- a/ROADMAP.md
++++ b/ROADMAP.md
+@@ -119,8 +119,8 @@ Feature                                          | Summary
+  Standalone view renderer                        | Use @fishrock123's standalone views module (enables views over sockets).  See https://github.com/balderdashy/sails/pull/2351#issuecomment-71855236 for more information.
+  Standalone static middleware                    | use static middleware directly in `lib/router` (enables static files over sockets)  See https://github.com/balderdashy/sails/pull/2351#issuecomment-71855236 for more information.
+  Break out core hooks into separate modules      | Makes Sails more composable, and removes most of its dependencies in core. Also allows for easier sharing of responsibility w/ the community, controls issue flow.  Started with github.com/balderdashy/sails-hook-sockets
+- Allow disabling session mw for static assets    | Allow session handling to be turned off for static assets. In certain situations, a request for a static asset concurrent to a request to a controller action can have undesirable consequences; specifically, a race condition can occur wherein the static asset response ends up overwriting changes that were made to the session in the controller action.  Luckily, this is a very rare issue, and only occurs when there are race conditions from two different simultaneous requests sent from the same browser with the same cookies.  If you encounter this issue today, first think about whether you actually need/want to do things this way.  If you absolutely need this functionality, a workaround is to change the order of middleware or override the `session` middleware implementation in `config/http.js`.  However, for the long-term, we need a better solution.  It would be good to improve the default behavior of our dependency, `express-session` so that it uses a smarter heuristics.  For more information, see the implementation of session persistence in [express-session](https://github.com/expressjs/session/blob/master/index.js#L207).  However, the single cleanest solution to the general case of this issue would be the ability to turn off session handling features for all static assets (or on a per-route basis).  This is easier said than done.  If you'd like to have this feature, and have the cycles/chops to implement it, please tweet @sgress454 or @mikermcneil and we can dive in and work out a plan.  Summary of what we could merge:  We could remove the default session middleware from our http middleware configuration, and instead add it as a manual step in the virtual router that runs before the route action is triggered.  Good news it that we're actually already doing this in order to support sessions [in the virtual router](https://github.com/balderdashy/sails/blob/master/lib/router/index.js#L101) (e.g. for use w/ socket.io).  So the actual implementation isn't a lot of work-- just needs some new automated tests written, as well as a lot of manual testing (including w/ redis sessions).  We also need to update our HTTP docs to explain that requests for static assets no longer create a session by default, and that default HTTP session support is no longer configured via Express's middleware chain (handled by the virtual router instead.)  Finally we'd also need to document how to enable sessions for assets (i.e. attaching the express-session middleware in `config/http.js`, but doing so directly _before_ the static middleware runs so that other routes don't try to retrieve/save the session twice).  [@sgress454](https://github.com/sgress454)
++ Allow disabling session mw for static assets    | Allow session handling to be turned off for static assets. In certain situations, a request for a static asset concurrent to a request to a rocket action can have undesirable consequences; specifically, a race condition can occur wherein the static asset response ends up overwriting changes that were made to the session in the rocket action.  Luckily, this is a very rare issue, and only occurs when there are race conditions from two different simultaneous requests sent from the same browser with the same cookies.  If you encounter this issue today, first think about whether you actually need/want to do things this way.  If you absolutely need this functionality, a workaround is to change the order of middleware or override the `session` middleware implementation in `config/http.js`.  However, for the long-term, we need a better solution.  It would be good to improve the default behavior of our dependency, `express-session` so that it uses a smarter heuristics.  For more information, see the implementation of session persistence in [express-session](https://github.com/expressjs/session/blob/master/index.js#L207).  However, the single cleanest solution to the general case of this issue would be the ability to turn off session handling features for all static assets (or on a per-route basis).  This is easier said than done.  If you'd like to have this feature, and have the cycles/chops to implement it, please tweet @sgress454 or @mikermcneil and we can dive in and work out a plan.  Summary of what we could merge:  We could remove the default session middleware from our http middleware configuration, and instead add it as a manual step in the virtual router that runs before the route action is triggered.  Good news it that we're actually already doing this in order to support sessions [in the virtual router](https://github.com/balderdashy/sails/blob/master/lib/router/index.js#L101) (e.g. for use w/ socket.io).  So the actual implementation isn't a lot of work-- just needs some new automated tests written, as well as a lot of manual testing (including w/ redis sessions).  We also need to update our HTTP docs to explain that requests for static assets no longer create a session by default, and that default HTTP session support is no longer configured via Express's middleware chain (handled by the virtual router instead.)  Finally we'd also need to document how to enable sessions for assets (i.e. attaching the express-session middleware in `config/http.js`, but doing so directly _before_ the static middleware runs so that other routes don't try to retrieve/save the session twice).  [@sgress454](https://github.com/sgress454)
+  Manual migrations in Sails CLI                  | For production environments it would be nice to have a save/secure command that creates the db automatically for you; e.g. a `sails migrate` or `sails create-db` command.  See [sails-migrations](https://github.com/BlueHotDog/sails-migrations) and [sails-db-migrate](https://github.com/building5/sails-db-migrate) for inspiration.  We should begin by contributing and using one or both of these modules in production in order to refine them further into a full fledged proposal (the Sails core team is using sails-migrations currently).  Originally suggested by [@globegitter](https://github.com/Globegitter).
+- Wildcard action policies                        | Instead of only having one global action policy `'*'` it would be nice if we could define policies for a specific action in all controllers: `'*/destroy': ['isOwner']` or something similar.  Originally suggested by [@ProLoser](https://github.com/ProLoser).
++ Wildcard action policies                        | Instead of only having one global action policy `'*'` it would be nice if we could define policies for a specific action in all rockets: `'*/destroy': ['isOwner']` or something similar.  Originally suggested by [@ProLoser](https://github.com/ProLoser).
+  SPDY/HTTP2 protocol support                     | See https://github.com/balderdashy/sails/issues/80 for background.
+ 
+diff --git a/lib/EVENTS.md b/lib/EVENTS.md
+index ab2dcff..bfd3151 100644
+--- a/lib/EVENTS.md
++++ b/lib/EVENTS.md
+@@ -33,18 +33,18 @@ Although it can be tempting, it's really best not to add new events to `sails` i
+ 
+ If you want to add/trigger events to monkeypatch your Sails core, it's best to do this by authoring a hook.  More information will show up as we learn more about best practices around that process, but one thing we've definitely learned is that you're better off namespacing your events and firing them on a single object (`sails`), then emitting and listening on different objects.  Why?  Sometimes objects get deleted or copied, and this can make a big mess.
+ 
+-If you need a special event in your hook, you *will* want to namespace it.  For instance, if I'm adding a hook called `enforceRestfulSesssions` that limits the actions that can be added to controllers to encourage code consistency, I might have a `hook:enforceRestfulSesssions:checked` event that fires when all of the controllers have been checked.  This is so that other hooks that know about `enforceRestfulSesssions` can wait until it has finished its check before proceeding  (whether it's just me, or other people on my team, or if I release my hook and it gets popular, other people in the Sails community).
++If you need a special event in your hook, you *will* want to namespace it.  For instance, if I'm adding a hook called `enforceRestfulSesssions` that limits the actions that can be added to rockets to encourage code consistency, I might have a `hook:enforceRestfulSesssions:checked` event that fires when all of the rockets have been checked.  This is so that other hooks that know about `enforceRestfulSesssions` can wait until it has finished its check before proceeding  (whether it's just me, or other people on my team, or if I release my hook and it gets popular, other people in the Sails community).
+ 
+ In my hook's initialize method, I might have the following:
+ 
+ ```javascript
+ 
+-// Wait until all the middleware from this app's controllers have loaded
+-sails.after('hook:controllers:loaded', function () {
++// Wait until all the middleware from this app's rockets have loaded
++sails.after('hook:rockets:loaded', function () {
+ 
+   // Do stuff
+   // e.g. prevent any methods called `login`, `logout` or `signup`
+-  // since we've opted organizationally for using CRUD on a SessionController instead
++  // since we've opted organizationally for using CRUD on a SessionRocket instead
+   // .....code here........
+ 
+   // When you're done, fire an event in
+diff --git a/lib/app/configuration/default-hooks.js b/lib/app/configuration/default-hooks.js
+index 6454506..b928f17 100644
+--- a/lib/app/configuration/default-hooks.js
++++ b/lib/app/configuration/default-hooks.js
+@@ -15,7 +15,7 @@ module.exports = {
+   'views': true,
+   'blueprints': true,
+   'responses': true,
+-  'controllers': true,
++  'rockets': true,
+   'sockets': 'sails-hook-sockets',
+   'pubsub': true,
+   'policies': true,
+diff --git a/lib/app/get-route-for.js b/lib/app/get-route-for.js
+index 505f428..9fc8194 100644
+--- a/lib/app/get-route-for.js
++++ b/lib/app/get-route-for.js
+@@ -23,8 +23,8 @@ var sailsUtil = require('sails-util');
+  * Usage:
+  *
+  * ```
+- * getRouteFor('DuckController.quack');
+- * getRouteFor({ target: 'DuckController.quack' });
++ * getRouteFor('DuckRocket.quack');
++ * getRouteFor({ target: 'DuckRocket.quack' });
+  * // =>
+  * // {
+  * //   url: '/ducks/:id/quack',
+@@ -46,17 +46,17 @@ module.exports = function getRouteFor(routeQuery){
+     routeTargetToLookup = routeQuery.target;
+   }
+   else {
+-    var invalidUsageErr = new Error('Usage error: `sails.getRouteFor()` expects a string route target (e.g. "DuckController.quack") or a dictionary with a target property (e.g. `{target: "DuckController.quack"}`).  But instead, it received a `'+typeof routeQuery+'`: '+util.inspect(routeQuery, {depth: null}) );
++    var invalidUsageErr = new Error('Usage error: `sails.getRouteFor()` expects a string route target (e.g. "DuckRocket.quack") or a dictionary with a target property (e.g. `{target: "DuckRocket.quack"}`).  But instead, it received a `'+typeof routeQuery+'`: '+util.inspect(routeQuery, {depth: null}) );
+     invalidUsageErr.code = 'E_USAGE';
+     throw invalidUsageErr;
+   }
+ 
+-  // Split the provided route target string to look up on its dot, getting its controller and action parts.
++  // Split the provided route target string to look up on its dot, getting its rocket and action parts.
+   var routeTargetToLookupPieces = routeTargetToLookup.split('.');
+ 
+   // If it doesn't have a dot, throw a usage error.
+   if ( routeTargetToLookupPieces.length < 2 ) {
+-    var ambiguousUsageErr = new Error('Usage error: Ambiguous usage- target specified to `sails.getRouteFor()` is not a valid route target string (e.g. "DuckController.quack") because there is no dot (".")');
++    var ambiguousUsageErr = new Error('Usage error: Ambiguous usage- target specified to `sails.getRouteFor()` is not a valid route target string (e.g. "DuckRocket.quack") because there is no dot (".")');
+     ambiguousUsageErr.code = 'E_USAGE';
+     throw ambiguousUsageErr;
+   }
+@@ -71,28 +71,28 @@ module.exports = function getRouteFor(routeQuery){
+         return true;
+       }
+       else {
+-        // TODO: If that check fails, try removing "Controller" suffix from both `routeTargetToLookup` and the controller in the `routeTarget` and comparing those. Note that this means you _should not define `ControllerController.js`_!
++        // TODO: If that check fails, try removing "Rocket" suffix from both `routeTargetToLookup` and the rocket in the `routeTarget` and comparing those. Note that this means you _should not define `RocketRocket.js`_!
+         // * * * ACTUALLY, see: https://github.com/balderdashy/sails/issues/3402#issuecomment-173255376   * * *
+       }
+     }
+     else if ( _.isObject(routeTarget) ) {
+       // If route target syntax itself contains a string `target` key, compare it directly with the provided `routeTargetToLookup`.
+       if ( _.isString(routeTarget.target) && routeTarget.target===routeTargetToLookup ) {
+-        // TODO: If that check fails, try removing "Controller" suffix from both `routeTargetToLookup` and the controller in the `routeTarget` and comparing those. Note that this means you _should not define `ControllerController.js`_!
++        // TODO: If that check fails, try removing "Rocket" suffix from both `routeTargetToLookup` and the rocket in the `routeTarget` and comparing those. Note that this means you _should not define `RocketRocket.js`_!
+         // * * * ACTUALLY, see: https://github.com/balderdashy/sails/issues/3402#issuecomment-173255376   * * *
+         firstMatchingRouteAddress = key;
+         return true;
+       }
+-      // If route target syntax contains `controller`+`action` keys, then check those against the relevant pieces of the provided `routeTargetToLookup`.
+-      else if ( _.isString(routeTarget.controller) && _.isString(routeTarget.action) && routeTarget.controller===routeTargetToLookupPieces[0] && routeTarget.action===routeTargetToLookupPieces[1] ) {
+-        // TODO: If that check fails, try removing "Controller" suffix from both `routeTargetToLookup` and the controller in the `routeTarget` and comparing those. Note that this means you _should not define `ControllerController.js`_!
++      // If route target syntax contains `rocket`+`action` keys, then check those against the relevant pieces of the provided `routeTargetToLookup`.
++      else if ( _.isString(routeTarget.rocket) && _.isString(routeTarget.action) && routeTarget.rocket===routeTargetToLookupPieces[0] && routeTarget.action===routeTargetToLookupPieces[1] ) {
++        // TODO: If that check fails, try removing "Rocket" suffix from both `routeTargetToLookup` and the rocket in the `routeTarget` and comparing those. Note that this means you _should not define `RocketRocket.js`_!
+         // * * * ACTUALLY, see: https://github.com/balderdashy/sails/issues/3402#issuecomment-173255376   * * *
+         firstMatchingRouteAddress = key;
+         return true;
+       }
+-      // If route target syntax contains only `controller`, compare assuming the "index" action against the relevant pieces of the provided `routeTargetToLookup`.
+-      else if ( _.isString(routeTarget.controller) && !routeTarget.action && routeTarget.controller===routeTargetToLookupPieces[0] && 'index'===routeTargetToLookupPieces[1] ) {
+-        // TODO: If that check fails, try removing "Controller" suffix from both `routeTargetToLookup` and the controller in the `routeTarget` and comparing those. Note that this means you _should not define `ControllerController.js`_!
++      // If route target syntax contains only `rocket`, compare assuming the "index" action against the relevant pieces of the provided `routeTargetToLookup`.
++      else if ( _.isString(routeTarget.rocket) && !routeTarget.action && routeTarget.rocket===routeTargetToLookupPieces[0] && 'index'===routeTargetToLookupPieces[1] ) {
++        // TODO: If that check fails, try removing "Rocket" suffix from both `routeTargetToLookup` and the rocket in the `routeTarget` and comparing those. Note that this means you _should not define `RocketRocket.js`_!
+         // * * * ACTUALLY, see: https://github.com/balderdashy/sails/issues/3402#issuecomment-173255376   * * *
+         firstMatchingRouteAddress = key;
+         return true;
+diff --git a/lib/app/get-url-for.js b/lib/app/get-url-for.js
+index 565d42a..4865824 100644
+--- a/lib/app/get-url-for.js
++++ b/lib/app/get-url-for.js
+@@ -21,10 +21,10 @@
+  * Usage:
+  *
+  * ```
+- * getUrlFor('DuckController.quack');
++ * getUrlFor('DuckRocket.quack');
+  * // => '/ducks/:id/quack'
+  *
+- * getUrlFor({ target: 'DuckController.quack' });
++ * getUrlFor({ target: 'DuckRocket.quack' });
+  * // => '/ducks/:id/quack'
+  * ```
+  */
+diff --git a/lib/app/private/inspect.js b/lib/app/private/inspect.js
+index a8fdd50..343c1a1 100644
+--- a/lib/app/private/inspect.js
++++ b/lib/app/private/inspect.js
+@@ -28,11 +28,11 @@ module.exports = function inspect () {
+   util.format('%d Models:\n', _(sails.models).toArray().value().length) +
+   _(sails.models).toArray().filter(function (it) {return !it.junctionTable;}).pluck('globalId').value() +
+   '\n\n' +
+-  util.format('%d Controllers:\n', _(sails.controllers).toArray().value().length)+
+-  _(sails.controllers).toArray().pluck('globalId').map(function (it) {return it+'Controller';}).value() +
++  util.format('%d Rockets:\n', _(sails.rockets).toArray().value().length)+
++  _(sails.rockets).toArray().pluck('globalId').map(function (it) {return it+'Rocket';}).value() +
+   '\n\n' +
+   // 'Routes:\n'+
+-  // _(sails.routes).toArray().filter(function (it) {return !it.junctionTable;}).pluck('globalId').map(function (it) {return it+'Controller';}).value() +
++  // _(sails.routes).toArray().filter(function (it) {return !it.junctionTable;}).pluck('globalId').map(function (it) {return it+'Rocket';}).value() +
+   // '\n\n' +
+   util.format('%d Hooks:\n', _(sails.hooks).toArray().value().length)+
+   _(sails.hooks).toArray().pluck('identity').value() +
+diff --git a/lib/hooks/blueprints/README.md b/lib/hooks/blueprints/README.md
+index 99f507c..87564a6 100644
+--- a/lib/hooks/blueprints/README.md
++++ b/lib/hooks/blueprints/README.md
+@@ -13,7 +13,7 @@
+ This hook's responsibilities are:
+ 
+ 1. Use `sails.modules` to read blueprints from the user's app into `self.middleware`.
+-2. Bind shadow routes to blueprint actions and controller actions.
++2. Bind shadow routes to blueprint actions and rocket actions.
+ 3. Listen for `route:typeUnknown` on `sails`, interpret route syntax which should match a blueprint action, and bind the appropriate middleware (this happens when the Router is loaded, after all the hooks.)
+ 
+ ## Roadmap
+diff --git a/lib/hooks/blueprints/actionUtil.js b/lib/hooks/blueprints/actionUtil.js
+index e2d070d..75cf795 100644
+--- a/lib/hooks/blueprints/actionUtil.js
++++ b/lib/hooks/blueprints/actionUtil.js
+@@ -336,7 +336,7 @@ var actionUtil = {
+   parseModel: function (req) {
+ 
+     // Ensure a model can be deduced from the request options.
+-    var model = req.options.model || req.options.controller;
++    var model = req.options.model || req.options.rocket;
+     if (!model) throw new Error(util.format('No "model" specified in route options.'));
+ 
+     var Model = req._sails.models[model];
+diff --git a/lib/hooks/blueprints/coercePK.js b/lib/hooks/blueprints/coercePK.js
+index 881566e..89fd226 100644
+--- a/lib/hooks/blueprints/coercePK.js
++++ b/lib/hooks/blueprints/coercePK.js
+@@ -9,25 +9,25 @@ module.exports = function (sails) {
+ 
+ 	/**
+ 	 * @param {Natural|String} id
+-	 * @param {String} controllerId
++	 * @param {String} rocketId
+ 	 * @param {String} actionId
+ 	 * @returns id ::
+ 	 *		If `id` is undefined, no `id` was provided
+ 	 *		If `id` is false, `id` is invalid, and probably unintentional
+ 	 *		Otherwise, `id` is valid and probably intentional
+ 	 */
+-	return function validId (id, controllerId, actionId) {
++	return function validId (id, rocketId, actionId) {
+ 
+-		// Interlace app-global `config.controllers` with this controller's `_config`
+-		var controllerConfig = _.merge({}, 
+-			sails.config.controllers, 
+-			sails.controllers[controllerId]._config || {});
++		// Interlace app-global `config.rockets` with this rocket's `_config`
++		var rocketConfig = _.merge({},
++			sails.config.rockets,
++			sails.rockets[rocketId]._config || {});
+ 
+ 
+ 		// The other CRUD methods are special reserved words-- in which case we always pass
+ 		// As long as the CRUD 'shortcuts' are enabled, you cannot search for models
+ 		// with an id of 'find', 'update', 'create', or 'destroy'
+-		if (	controllerConfig.blueprints.shortcuts && (
++		if (	rocketConfig.blueprints.shortcuts && (
+ 				id === 'find'   ||
+ 				id === 'update' ||
+ 				id === 'create' ||
+@@ -37,7 +37,7 @@ module.exports = function (sails) {
+ 
+ 
+ 		// If expectIntegerId check is disabled, `id` is always ok
+-		if ( !controllerConfig.blueprints.expectIntegerId ) {
++		if ( !rocketConfig.blueprints.expectIntegerId ) {
+ 			return id;
+ 		}
+ 
+@@ -51,12 +51,12 @@ module.exports = function (sails) {
+ 			if (sails.config.environment === 'development') {
+ 				sails.log.warn('\n',
+ 							'Just then, you were prevented from being routed \n',
+-							'to the `' + actionId + '` blueprint for controller: ' + controllerId + 
++							'to the `' + actionId + '` blueprint for rocket: ' + rocketId +
+ 							' using `id='+id+'`.\n',
+ 							'This is because REST blueprint routes expect natural number ids by default, '+
+ 							'and so the `' + actionId + '()` middleware was skipped- \n',
+ 							'If you\'d like to disable this restriction, you can do so by setting \n',
+-							'`expectIntegerId: false` in the blueprint config for this controller.');
++							'`expectIntegerId: false` in the blueprint config for this rocket.');
+ 			}
+ 			return false;
+ 		}
+diff --git a/lib/hooks/blueprints/index.js b/lib/hooks/blueprints/index.js
+index 5c781e7..c989ddf 100644
+--- a/lib/hooks/blueprints/index.js
++++ b/lib/hooks/blueprints/index.js
+@@ -6,7 +6,7 @@ var _ = require('lodash');
+ var util = require('util');
+ var pluralize = require('pluralize');
+ var STRINGFILE = require('sails-stringfile');
+-var BlueprintController = {
++var BlueprintRocket = {
+   create: require('./actions/create'),
+   find: require('./actions/find'),
+   findone: require('./actions/findOne'),
+@@ -58,29 +58,29 @@ module.exports = function(sails) {
+ 
+         // Blueprint/Shadow-Routes Enabled
+         //
+-        // e.g. '/frog/jump': 'FrogController.jump'
++        // e.g. '/frog/jump': 'FrogRocket.jump'
+         actions: true,
+-        // e.g. '/frog': 'FrogController.index'
++        // e.g. '/frog': 'FrogRocket.index'
+         index: true,
+-        // e.g. '/frog/find/:id?': 'FrogController.find'
++        // e.g. '/frog/find/:id?': 'FrogRocket.find'
+         shortcuts: true,
+-        // e.g. 'get /frog/:id?': 'FrogController.find'
++        // e.g. 'get /frog/:id?': 'FrogRocket.find'
+         rest: true,
+ 
+ 
+ 
+         // Blueprint/Shadow-Route Modifiers
+         //
+-        // e.g. 'get /api/v2/frog/:id?': 'FrogController.find'
++        // e.g. 'get /api/v2/frog/:id?': 'FrogRocket.find'
+         prefix: '',
+ 
+         // Blueprint/REST-Route Modifiers
+         // Will work only for REST and will extend `prefix` option
+         //
+-        // e.g. 'get /api/v2/frog/:id?': 'FrogController.find'
++        // e.g. 'get /api/v2/frog/:id?': 'FrogRocket.find'
+         restPrefix: '',
+ 
+-        // e.g. 'get /frogs': 'FrogController.find'
++        // e.g. 'get /frogs': 'FrogRocket.find'
+         pluralize: false,
+ 
+ 
+@@ -120,7 +120,7 @@ module.exports = function(sails) {
+       // Always wait until after router has bound static routes.
+       // If policies hook is enabled, also wait until policies are bound.
+       // If orm hook is enabled, also wait until models are known.
+-      // If controllers hook is enabled, also wait until controllers are known.
++      // If rockets hook is enabled, also wait until rockets are known.
+       var eventsToWaitFor = [];
+       eventsToWaitFor.push('router:after');
+       if (sails.hooks.policies) {
+@@ -129,8 +129,8 @@ module.exports = function(sails) {
+       if (sails.hooks.orm) {
+         eventsToWaitFor.push('hook:orm:loaded');
+       }
+-      if (sails.hooks.controllers) {
+-        eventsToWaitFor.push('hook:controllers:loaded');
++      if (sails.hooks.rockets) {
++        eventsToWaitFor.push('hook:rockets:loaded');
+       }
+       sails.after(eventsToWaitFor, hook.bindShadowRoutes);
+ 
+@@ -138,9 +138,9 @@ module.exports = function(sails) {
+       loadMiddleware(cb);
+     },
+ 
+-    extendControllerMiddleware: function() {
+-      _.each(sails.middleware.controllers, function (controller) {
+-        _.defaults(controller, hook.middleware);
++    extendRocketMiddleware: function() {
++      _.each(sails.middleware.rockets, function (rocket) {
++        _.defaults(rocket, hook.middleware);
+       });
+     },
+ 
+@@ -154,23 +154,23 @@ module.exports = function(sails) {
+         STRINGFILE.logMoreInfoLink(STRINGFILE.get('links.docs.config.blueprints'), sails.log.warn);
+       };
+ 
+-      _.each(sails.middleware.controllers, function eachController (controller, controllerId) {
+-        if ( !_.isObject(controller) || _.isArray(controller) ) return;
++      _.each(sails.middleware.rockets, function eachRocket (rocket, rocketId) {
++        if ( !_.isObject(rocket) || _.isArray(rocket) ) return;
+ 
+         // Get globalId for use in errors/warnings
+-        var globalId = sails.controllers[controllerId].globalId;
++        var globalId = sails.rockets[rocketId].globalId;
+ 
+-        // Determine blueprint configuration for this controller
++        // Determine blueprint configuration for this rocket
+         var config = _.merge({},
+           sails.config.blueprints,
+-          controller._config || {});
++          rocket._config || {});
+ 
+-        // Validate blueprint config for this controller
++        // Validate blueprint config for this rocket
+         if ( config.prefix ) {
+           if ( !_(config.prefix).isString() ) {
+             sails.after('lifted', function () {
+               logWarns([
+-                util.format('Ignoring invalid blueprint prefix configured for controller `%s`.', globalId),
++                util.format('Ignoring invalid blueprint prefix configured for rocket `%s`.', globalId),
+                 '`prefix` should be a string, e.g. "/api/v1".'
+               ]);
+             });
+@@ -180,7 +180,7 @@ module.exports = function(sails) {
+             var originalPrefix = config.prefix;
+             sails.after('lifted', function () {
+               logWarns([
+-                util.format('Invalid blueprint prefix ("%s") configured for controller `%s` (should start with a `/`).', originalPrefix, globalId),
++                util.format('Invalid blueprint prefix ("%s") configured for rocket `%s` (should start with a `/`).', originalPrefix, globalId),
+                 util.format('For now, assuming you meant:  "%s".', config.prefix)
+               ]);
+             });
+@@ -189,12 +189,12 @@ module.exports = function(sails) {
+           }
+         }
+ 
+-        // Validate REST route blueprint config for this controller
++        // Validate REST route blueprint config for this rocket
+         if ( config.restPrefix ) {
+           if ( !_(config.restPrefix).isString() ) {
+             sails.after('lifted', function () {
+               logWarns([
+-                util.format('Ignoring invalid blueprint rest prefix configured for controller `%s`.', globalId),
++                util.format('Ignoring invalid blueprint rest prefix configured for rocket `%s`.', globalId),
+                 '`restPrefix` should be a string, e.g. "/api/v1".'
+               ]);
+             });
+@@ -204,7 +204,7 @@ module.exports = function(sails) {
+             var originalRestPrefix = config.restPrefix;
+             sails.after('lifted', function () {
+               logWarns([
+-                util.format('Invalid blueprint restPrefix ("%s") configured for controller `%s` (should start with a `/`).', originalRestPrefix, globalId),
++                util.format('Invalid blueprint restPrefix ("%s") configured for rocket `%s` (should start with a `/`).', originalRestPrefix, globalId),
+                 util.format('For now, assuming you meant:  "%s".', config.restPrefix)
+               ]);
+             });
+@@ -213,17 +213,17 @@ module.exports = function(sails) {
+           }
+         }
+ 
+-        // Determine the names of the controller's user-defined actions
+-        // IMPORTANT: Note that we use `sails.controllers` rather than
+-        // `sails.middleware.controllers` (since `sails.middleware.controllers`
++        // Determine the names of the rocket's user-defined actions
++        // IMPORTANT: Note that we use `sails.rockets` rather than
++        // `sails.middleware.rockets` (since `sails.middleware.rockets`
+         // will have blueprints already mixed-in, and we want the explicit actions
+         // defined in the app)
+-        var actions = Object.keys(sails.controllers[controllerId]);
++        var actions = Object.keys(sails.rockets[rocketId]);
+ 
+ 
+ 
+         // Determine base route
+-        var baseRouteName = controllerId;
++        var baseRouteName = rocketId;
+ 
+         if (config.pluralize) {
+           baseRouteName = pluralize(baseRouteName);
+@@ -242,36 +242,36 @@ module.exports = function(sails) {
+ 
+           var opts = _.merge({
+             action: actionId,
+-            controller: controllerId
++            rocket: rocketId
+           }, routeOpts);
+ 
+           // Bind a route based on the action name, if `actions` shadows enabled
+           if (config.actions) {
+             var actionRoute = baseRoute + '/' + actionId.toLowerCase() + '/:id?';
+-            sails.log.silly('Binding action ('+actionId.toLowerCase()+') blueprint/shadow route for controller:',controllerId);
+-            sails.router.bind(actionRoute, controller[actionId.toLowerCase()], null, opts);
++            sails.log.silly('Binding action ('+actionId.toLowerCase()+') blueprint/shadow route for rocket:',rocketId);
++            sails.router.bind(actionRoute, rocket[actionId.toLowerCase()], null, opts);
+           }
+ 
+           // Bind base route to index action, if `index` shadows are not disabled
+           if (config.index !== false && actionId.match(/^index$/i)) {
+-            sails.log.silly('Binding index blueprint/shadow route for controller:',controllerId);
+-            sails.router.bind(baseRoute, controller.index, null, opts);
++            sails.log.silly('Binding index blueprint/shadow route for rocket:',rocketId);
++            sails.router.bind(baseRoute, rocket.index, null, opts);
+           }
+         });
+ 
+-        // Determine the model connected to this controller either by:
++        // Determine the model connected to this rocket either by:
+         // -> explicit configuration
+-        // -> on the controller
++        // -> on the rocket
+         // -> on the routes config
+         // -> or implicitly by globalId
+-        // -> or implicitly by controller id
+-        var routeConfig = sails.router.explicitRoutes[controllerId] || {};
++        // -> or implicitly by rocket id
++        var routeConfig = sails.router.explicitRoutes[rocketId] || {};
+         var modelFromGlobalId = _.findWhere(sails.models, {globalId: globalId});
+-        var modelId = config.model || routeConfig.model || (modelFromGlobalId && modelFromGlobalId.identity) || controllerId;
++        var modelId = config.model || routeConfig.model || (modelFromGlobalId && modelFromGlobalId.identity) || rocketId;
+ 
+         // If the orm hook is enabled, it has already been loaded by this time,
+         // so just double-check to see if the attached model exists in `sails.models`
+-        // before trying to attach any CRUD blueprint actions to the controller.
++        // before trying to attach any CRUD blueprint actions to the rocket.
+         if (sails.hooks.orm && sails.models && sails.models[modelId]) {
+ 
+           // If a model with matching identity exists,
+@@ -283,9 +283,9 @@ module.exports = function(sails) {
+           // Bind convenience functions for readability below:
+ 
+           // Given an action id like "find" or "create", returns the appropriate
+-          // blueprint action (or explicit controller action if the controller
++          // blueprint action (or explicit rocket action if the rocket
+           // overrode the blueprint CRUD action.)
+-          var _getAction = _.partial(_getMiddlewareForShadowRoute, controllerId);
++          var _getAction = _.partial(_getMiddlewareForShadowRoute, rocketId);
+ 
+           // Returns a customized version of the route template as a string.
+           var _getRoute = _.partialRight(util.format, baseRoute);
+@@ -300,20 +300,20 @@ module.exports = function(sails) {
+           // Mix in the known associations for this model to the route options.
+           routeOpts = _.merge({ associations: _.cloneDeep(Model.associations) }, routeOpts);
+ 
+-          // Binds a route to the specifed action using _getAction, and sets the action and controller
++          // Binds a route to the specifed action using _getAction, and sets the action and rocket
+           // options for req.options
+           var _bindRoute = function (path, action, options) {
+             options = options || routeOpts;
+-            options = _.extend({}, options, {action: action, controller: controllerId});
++            options = _.extend({}, options, {action: action, rocket: rocketId});
+             sails.router.bind ( path, _getAction(action), null, options);
+ 
+           };
+ 
+           // Bind URL-bar "shortcuts"
+-          // (NOTE: in a future release, these may be superceded by embedding actions in generated controllers
++          // (NOTE: in a future release, these may be superceded by embedding actions in generated rockets
+           //  and relying on action blueprints instead.)
+           if ( config.shortcuts ) {
+-            sails.log.silly('Binding shortcut blueprint/shadow routes for model ', modelId, ' on controller:', controllerId);
++            sails.log.silly('Binding shortcut blueprint/shadow routes for model ', modelId, ' on rocket:', rocketId);
+ 
+             _bindRoute(_getRoute('%s/find'), 'find');
+             _bindRoute(_getRoute('%s/find/:id'), 'findOne');
+@@ -327,7 +327,7 @@ module.exports = function(sails) {
+               var _getAssocRoute = _.partialRight(util.format, baseRoute, alias);
+               var opts = _.merge({ alias: alias }, routeOpts);
+ 
+-              sails.log.silly('Binding "shortcuts" to association blueprint `'+alias+'` for',controllerId);
++              sails.log.silly('Binding "shortcuts" to association blueprint `'+alias+'` for',rocketId);
+               _bindRoute( _getAssocRoute('%s/:parentid/%s/add/:id?'),      'add' , opts );
+               _bindRoute( _getAssocRoute('%s/:parentid/%s/remove/:id?'),   'remove', opts );
+             });
+@@ -335,7 +335,7 @@ module.exports = function(sails) {
+ 
+           // Bind "rest" blueprint/shadow routes
+           if ( config.rest ) {
+-            sails.log.silly('Binding RESTful blueprint/shadow routes for model+controller:',controllerId);
++            sails.log.silly('Binding RESTful blueprint/shadow routes for model+rocket:',rocketId);
+ 
+             _bindRoute(_getRestRoute('get %s'), 'find');
+             _bindRoute(_getRestRoute('get %s/:id'), 'findOne');
+@@ -350,7 +350,7 @@ module.exports = function(sails) {
+               var alias = association.alias;
+               var _getAssocRoute = _.partialRight(util.format, baseRestRoute, alias);
+               var opts = _.merge({ alias: alias }, routeOpts);
+-              sails.log.silly('Binding RESTful association blueprint `'+alias+'` for',controllerId);
++              sails.log.silly('Binding RESTful association blueprint `'+alias+'` for',rocketId);
+ 
+               _bindRoute( _getAssocRoute('post %s/:parentid/%s/:id?'),     'add', opts );
+               _bindRoute( _getAssocRoute('delete %s/:parentid/%s/:id?'),   'remove', opts );
+@@ -361,7 +361,7 @@ module.exports = function(sails) {
+               var alias = association.alias;
+               var _getAssocRoute = _.partialRight(util.format, baseRestRoute, alias);
+               var opts = _.merge({ alias: alias }, routeOpts);
+-              sails.log.silly('Binding RESTful association blueprint `'+alias+'` for',controllerId);
++              sails.log.silly('Binding RESTful association blueprint `'+alias+'` for',rocketId);
+ 
+               _bindRoute( _getAssocRoute('get %s/:parentid/%s/:id?'), 'populate', opts );
+             }).value();
+@@ -372,17 +372,17 @@ module.exports = function(sails) {
+ 
+       /**
+        * Return the middleware function that should be bound for a shadow route
+-       * pointing to the specified blueprintId. Will use the explicit controller
++       * pointing to the specified blueprintId. Will use the explicit rocket
+        * action if it exists, otherwise the blueprint action.
+        *
+-       * @param  {String} controllerId
++       * @param  {String} rocketId
+        * @param  {String} blueprintId  [find, create, etc.]
+        * @return {Function}            [middleware]
+        */
+-      function _getMiddlewareForShadowRoute (controllerId, blueprintId) {
++      function _getMiddlewareForShadowRoute (rocketId, blueprintId) {
+ 
+-        // Allow custom actions defined in controller to override blueprint actions.
+-        return sails.middleware.controllers[controllerId][blueprintId.toLowerCase()] || hook.middleware[blueprintId.toLowerCase()];
++        // Allow custom actions defined in rocket to override blueprint actions.
++        return sails.middleware.rockets[rocketId][blueprintId.toLowerCase()] || hook.middleware[blueprintId.toLowerCase()];
+       }
+     }
+ 
+@@ -403,27 +403,27 @@ module.exports = function(sails) {
+     sails.log.verbose('Loading blueprint middleware...');
+ 
+     // Start off w/ the built-in blueprint actions (generic CRUD logic)
+-    // (see BlueprintController definition at top of file)
++    // (see BlueprintRocket definition at top of file)
+ 
+     // Get custom blueprint definitions
+     sails.modules.loadBlueprints(function modulesLoaded (err, modules) {
+       if (err) return cb(err);
+ 
+-      // Merge custom overrides from our app into the BlueprintController
++      // Merge custom overrides from our app into the BlueprintRocket
+       // in Sails core.
+-      _.extend(BlueprintController, modules);
++      _.extend(BlueprintRocket, modules);
+ 
+       // Add _middlewareType keys to the functions, for debugging
+-      _.each(BlueprintController, function(fn, key) {
++      _.each(BlueprintRocket, function(fn, key) {
+         fn._middlewareType = 'BLUEPRINT: '+fn.name || key;
+       });
+ 
+       // Save reference to blueprints middleware in hook.
+-      hook.middleware = BlueprintController;
++      hook.middleware = BlueprintRocket;
+ 
+-      // When our app's controllers are finished loading,
++      // When our app's rockets are finished loading,
+       // merge the blueprint actions into each of them as defaults.
+-      sails.once('middleware:registered', hook.extendControllerMiddleware);
++      sails.once('middleware:registered', hook.extendRocketMiddleware);
+ 
+       return cb(err);
+     });
+diff --git a/lib/hooks/blueprints/onRoute.js b/lib/hooks/blueprints/onRoute.js
+index e71d037..1b627a7 100644
+--- a/lib/hooks/blueprints/onRoute.js
++++ b/lib/hooks/blueprints/onRoute.js
+@@ -7,7 +7,7 @@ var _ = require('lodash');
+ 
+ 
+ // NOTE:
+-// Since controllers load blueprint actions by default anyways, this route syntax handler
++// Since rockets load blueprint actions by default anyways, this route syntax handler
+ // can be replaced with `{action: 'find'}, {action: 'create'}, ...` etc.
+ 
+ 
+diff --git a/lib/hooks/controllers/README.md b/lib/hooks/controllers/README.md
+deleted file mode 100644
+index e994849..0000000
+--- a/lib/hooks/controllers/README.md
++++ /dev/null
+@@ -1,59 +0,0 @@
+-# controllers (Core Hook)
+-
+-
+-## Status
+-
+-> ##### Stability: [2](https://github.com/balderdashy/sails-docs/blob/master/contributing/stability-index.md) - Stable
+-
+-
+-
+-## Dependencies
+-
+-In order for this hook to load, the following other hooks must have already finished loading:
+-
+-- moduleloader
+-- userconfig
+-
+-
+-## Dependents
+-
+-If this hook is disabled, in order for Sails to load, the following other core hooks must also be disabled:
+-
+-- blueprints
+-
+-
+-## Purpose
+-
+-This hook's responsibilities are:
+-
+-
+-##### Load adapters
+-
+-When Sails loads, this hook calls out to `sails.modules.loadControllers()` (exposed by the `moduleloader`), loading all of this app's controllers into `sails.hooks.controllers.middleware`.
+-
+-
+-
+-##### Handle controller/action route target syntax
+-
+-This hook listens for `route:typeUnknown` events which are emitted on the `sails` app instance when explicit routes are bound (when `Router` is loaded after all the hooks).  This hook attempts to interpret the target syntax as pointing specifically at one of the app's controller and action pairs.  Then, if it can, it binds the route for the controller/action controller.
+-
+-
+-## Implicit Defaults
+-_N/A_
+-
+-
+-## Events
+-
+-##### `hook:controllers:loaded`
+-
+-Emitted when this hook has been automatically loaded by Sails core, and triggered the callback in its `initialize` function.
+-
+-
+-
+-
+-## FAQ
+-
+-+ Why is this a hook and not part of core?
+-  + Makes it easier to change independently (e.g. you don't like the `*Controller.js` suffix in your controller filenames, or you want to do something else custom)
+-
+-> If you have a question that isn't covered here, please feel free to send a PR adding it to this section (even if you don't have the answer!)
+diff --git a/lib/hooks/controllers/index.js b/lib/hooks/controllers/index.js
+deleted file mode 100644
+index bf85e3d..0000000
+--- a/lib/hooks/controllers/index.js
++++ /dev/null
+@@ -1,76 +0,0 @@
+-/**
+- * Module dependencies.
+- */
+-
+-var _ = require('lodash');
+-var toLoadAndRegisterControllers = require('./to-load-and-register-controllers');
+-var toInterpretRouteSyntax = require('./to-interpret-route-syntax');
+-
+-
+-
+-/**
+- * `controllers` (Core Hook)
+- */
+-module.exports = function(sails) {
+-
+-
+-  return {
+-
+-
+-    /**
+-     * Implicit defaults which will be merged into sails.config before this hook is loaded...
+-     * @type {Dictionary}
+-     */
+-    defaults: {},
+-
+-
+-    /**
+-     * Before any hooks have begun loading...
+-     * (called automatically by Sails core)
+-     */
+-    configure: function() {
+-      // This initial setup of `sails.controllers` was included here as an experimental
+-      // feature so that these modules would be accessible for other hooks.  This will be
+-      // deprecated in Sails v1.0 in favor of the ability for hook authors to register or unregister
+-      // controllers programatically.  In addition, controllers will no longer be exposed
+-      // on the `sails` app instance.
+-      sails.controllers = {};
+-    },
+-
+-
+-    /**
+-     * When the hook is loaded...
+-     * (called automatically by Sails core)
+-     */
+-    initialize: function(cb) {
+-
+-      // In future versions of Sails, the empty registry of controllers can be initialized here:
+-      // sails.controllers = {};
+-
+-      // Register route syntax for binding controllers.
+-      var interpretRouteSyntax = toInterpretRouteSyntax(sails);
+-      sails.on('route:typeUnknown', interpretRouteSyntax);
+-
+-      // Load controllers from app and register their actions as middleware.
+-      // TODO -- make a public .reload() hook method, rather than exposing
+-      // this private method on the hook object.  Doing this for now because
+-      // certain apps in the wild are relying on it.
+-      this.loadAndRegisterControllers = toLoadAndRegisterControllers(sails, this);
+-      this.loadAndRegisterControllers(cb);
+-    },
+-
+-
+-    /**
+-     * explicitActions
+-     *
+-     * This is used to hold a reference to explicit actions and controllers.
+-     * << This will be removed in a future release of Sails. >>
+-     *
+-     * @type {Dictionary}
+-     * @api private
+-     */
+-    explicitActions: {},
+-
+-
+-  };
+-};
+diff --git a/lib/hooks/controllers/to-interpret-route-syntax.js b/lib/hooks/controllers/to-interpret-route-syntax.js
+deleted file mode 100644
+index c4fab45..0000000
+--- a/lib/hooks/controllers/to-interpret-route-syntax.js
++++ /dev/null
+@@ -1,272 +0,0 @@
+-/**
+- * Module dependencies.
+- */
+-
+-var _ = require('lodash');
+-var sailsUtil = require('sails-util');
+-
+-
+-/**
+- * @param  {SailsApp} sails  [Sails app]
+- * @return {Function}
+- */
+-module.exports = function to(sails) {
+-
+-  /**
+-   * `interpretRouteSyntax()`
+-   *
+-   * "Teach" router to understand references to controllers.
+-   * This is the event handler for the 'route:typeUnknown' emitted on `sails`.
+-   *
+-   * @param  {Dictionary} route
+-   *         @property {String} verb
+-   *         @property {String} path
+-   *         @property {Dictionary} target
+-   *         @property {Dictionary} options
+-   *
+-   * @api private
+-   */
+-  return function interpretRouteSyntax (route) {
+-    var target = route.target;
+-    var path = route.path;
+-    var verb = route.verb;
+-    var options = route.options;
+-
+-
+-    // Support various dictionary target notations, e.g.:
+-    // `{ controller: 'UserController' }`
+-    if (_.isObject(target) && !_.isFunction(target) && !_.isArray(target)) {
+-
+-      // Merge target into `options` to get hold of relevant route options:
+-      options = _.merge(options, target);
+-      // Note: this (^) could be moved up into lib/router/bind.js, since its
+-      // only pertinent for core options such as `skipAssets`.  There would need
+-      // to be changes in other hooks as well.
+-
+-      // Support { controller: 'FooController' } notation (with or without `action`)
+-      if ( !_.isUndefined(target.controller) ) {
+-        return bindController(path, target, verb, options);
+-      }
+-
+-      // Support resourceful sub-mappings for verbless routes
+-      // e.g. '/someRoute': { post: 'FooController.bar', get: '...', /* ... */ }
+-      // If verb was manually specified in route address (e.g. `get /someRoute`), ignore the sub-mappings.
+-      //
+-      ////////////////////////////////////////////////////////////////////////////////////
+-      // Support for this routing syntax will be deprecated in Sails v1.0.
+-      ////////////////////////////////////////////////////////////////////////////////////
+-      if ( !options.detectedVerb ) {
+-        if ( target.get ) { sails.router.bind (path, target['get'],'get', options); }
+-        if ( target.post ) { sails.router.bind (path, target['post'],'post', options); }
+-        if ( target.put ) { sails.router.bind (path, target['put'],'put', options); }
+-        if ( target['delete'] ) { sails.router.bind (path, target['delete'],'delete', options); }
+-        // If there is a legitimate use case for it, add other HTTP verbs here for completeness.
+-      }
+-
+-      // Lone action syntax, e.g.:
+-      // '/someRoute': { action: 'find', model: 'foo' }
+-      //
+-      // (useful for explicitly routing a URL to a blueprint action)
+-      //
+-      ////////////////////////////////////////////////////////////////////////////////////
+-      // Support for this routing syntax will be deprecated in Sails v1.0.
+-      ////////////////////////////////////////////////////////////////////////////////////
+-      else if ( !_.isUndefined(target.action) ) {
+-
+-        // Merge target def. into route options:
+-        options.action = target.action;
+-
+-        return bindBlueprintAction(path, target.action, verb, options);
+-      }
+-    }
+-
+-
+-    // Support string ('FooController.bar') notation
+-    else if (_.isString(target)) {
+-
+-      // Handle dot notation
+-      var parsedTarget = target.match(/^([^.]+)\.?([^.]*)?$/);
+-
+-      // If target matches a controller (or, if views hook enabled, a view)
+-      // go ahead and assume that this is a dot notation route
+-      var controllerId = sailsUtil.normalizeControllerId(parsedTarget[1]);
+-      var actionId = _.isString(parsedTarget[2]) ? parsedTarget[2].toLowerCase() : 'index';
+-
+-      // If this is a known controller, bind it
+-      if ( controllerId && (
+-        sails.middleware.controllers[controllerId] ||
+-        (sails.config.hooks.views.blueprints && sails.middleware.views[controllerId])
+-        )
+-      ) {
+-        return bindController (path, {
+-          controller: controllerId,
+-          action: actionId
+-        }, verb, options);
+-      }
+-    }
+-
+-    // Ignore unknown route syntax
+-    // If it needs to be understood by another hook, the hook would have also received
+-    // the typeUnknown event, so we're done.
+-    return;
+-  };
+-
+-
+-
+-  /**
+-   * Bind route to a controller/action.
+-   *
+-   * @param  {[type]} path   [description]
+-   * @param  {[type]} target [description]
+-   * @param  {[type]} verb   [description]
+-   * @param  {[type]} options[description]
+-   * @return {[type]}        [description]
+-   * @api private
+-   */
+-  function bindController ( path, target, verb, options ) {
+-
+-    // Normalize controller and action ids
+-    var controllerId = sailsUtil.normalizeControllerId(target.controller);
+-    var actionId = _.isString(target.action) ? target.action.toLowerCase() : null;
+-
+-
+-    // Look up appropriate controller/action and make sure it exists
+-    var controller = sails.middleware.controllers[controllerId];
+-
+-    // Fall back to matching view
+-    if (!controller) {
+-      controller = sails.middleware.views[controllerId];
+-    }
+-
+-    // If a controller and/or action was specified,
+-    // but it's not a match, warn the user
+-    if ( ! ( controller && _.isObject(controller) )) {
+-      sails.after('lifted', function () {
+-        sails.log.error(
+-          'Ignored attempt to bind route (' + path + ') to unknown controller ::',
+-          controllerId+'.'
+-        );
+-      });
+-      return;
+-    }
+-    if ( actionId && !controller[actionId] ) {
+-      sails.after('lifted', function () {
+-        sails.log.error(
+-          'Ignored attempt to bind route (' + path + ') to unknown controller.action ::',
+-          controllerId + '.' + (actionId || 'index')
+-        );
+-      });
+-      return;
+-    }
+-
+-    // (if unspecified, default actionId to 'index'
+-    actionId = actionId || 'index';
+-
+-    // Merge the target controller/action into our route options:
+-    options.controller = controllerId;
+-    options.action = actionId;
+-
+-
+-    // Determine the model connected to this controller either by:
+-    // -> on the routes config
+-    // -> on the controller
+-    //
+-    ////////////////////////////////////////////////////////////////////////////////////
+-    // Support for specifying `model` on the route target will be deprecated in Sails v1.0.
+-    // (instead you will be able to override the action directly)
+-    ////////////////////////////////////////////////////////////////////////////////////
+-    var modelId = options.model || controllerId;
+-
+-
+-
+-    // If the orm hook is enabled, it has already been loaded by this time,
+-    // so just double-check to see if the attached model exists in `sails.models`.
+-    //
+-    ////////////////////////////////////////////////////////////////////////////////////
+-    // In Sails v1.0, this logic will be implemented by the blueprints hook rather than here.
+-    ////////////////////////////////////////////////////////////////////////////////////
+-    if (sails.hooks.orm && sails.models && sails.models[modelId]) {
+-
+-      // If a model with matching identity exists,
+-      // extend route options with the id of the model.
+-      options.model = modelId;
+-
+-      var Model = sails.models[modelId];
+-
+-      // Mix in the known associations for this model to the route options.
+-      options = _.merge({ associations: _.cloneDeep(Model.associations) }, options);
+-
+-      // Mix in the relevant blueprint config
+-      options = _.defaults(options, {
+-        populate: sails.config.blueprints.populate,
+-        defaultLimit: sails.config.blueprints.defaultLimit
+-      });
+-
+-    }
+-
+-
+-    // Now bind the specified action-- our "subTarget"
+-    var subTarget = controller[actionId];
+-    //
+-    // But first, if this is not an array, then wrap it in one (non-destructive)
+-    if ( !_.isArray(subTarget) ) {
+-      subTarget = [ subTarget ];
+-    }
+-    //
+-    // Now we have an array of functions, so bind each one to the route address in order.
+-    _.each(subTarget, function bindEachMiddlewareInSubTarget (fn) {
+-      sails.router.bind(path, controllerHandler(fn), verb, options);
+-    });
+-
+-
+-
+-    // Wrap up the controller middleware to supply access to
+-    // the original target when requests comes in
+-    function controllerHandler (originalFn) {
+-
+-      if ( !_.isFunction(originalFn) ) {
+-        sails.after('lifted', function () {
+-          sails.log.error(
+-            'In '+controllerId + '.' + actionId+', ignored invalid attempt to bind route to a non-function controller:',
+-            originalFn, 'for path: ', path, verb ? ('and verb: ' + verb) : '');
+-        });
+-        return;
+-      }
+-
+-      // Bind intercepted middleware function to route
+-      return originalFn;
+-    }
+-
+-    return;
+-  }
+-
+-
+-  /**
+-   * Bind specified blueprint action to the specified route.
+-   *
+-   * @param  {[type]} path              [description]
+-   * @param  {[type]} blueprintActionID [description]
+-   * @param  {[type]} verb              [description]
+-   * @param  {[type]} options           [description]
+-   * @return {[type]}                   [description]
+-   */
+-  function bindBlueprintAction (path, blueprintActionID, verb, options){
+-
+-    // Look up appropriate blueprint action and make sure it exists
+-    var blueprint = sails.middleware.blueprints[blueprintActionID];
+-
+-    // If a 'blueprint' was specified, but it doesn't exist, warn the user and ignore it.
+-    if ( ! ( blueprint && _.isFunction(blueprint) )) {
+-      sails.after('lifted', function () {
+-        sails.log.error(
+-          'Ignored attempt to bind route (' + path + ') to unknown blueprint action (`'+blueprintActionID+'`).'
+-        );
+-      });
+-      return;
+-    }
+-
+-    sails.router.bind(path, blueprint, verb, options);
+-  }
+-
+-};
+-
+diff --git a/lib/hooks/controllers/to-load-and-register-controllers.js b/lib/hooks/controllers/to-load-and-register-controllers.js
+deleted file mode 100644
+index a3531e3..0000000
+--- a/lib/hooks/controllers/to-load-and-register-controllers.js
++++ /dev/null
+@@ -1,83 +0,0 @@
+-/**
+- * Module dependencies.
+- */
+-
+-var _ = require('lodash');
+-var sailsUtil = require('sails-util');
+-
+-
+-/**
+- * @param  {SailsApp} sails  [Sails app]
+- * @param  {Hook} hook       [instantiated hook]
+- * @return {Function}
+- */
+-module.exports = function to(sails, hook) {
+-
+-  /**
+-   * `loadAndRegisterControllers()`
+-   *
+-   * Wipe everything and (re)load middleware from controllers. Merge any
+-   * controllers already defined in the sails.controllers namespace.
+-   *
+-   * @api private
+-   */
+-  return function loadAndRegisterControllers (cb) {
+-
+-    // Remove all controllers from middleware hash,
+-    // but retain the reference between this and sails.middleware.controllers
+-    _.each(_.keys(hook.middleware), function(key) {
+-      delete hook.middleware[key];
+-    });
+-
+-    // Load app controllers
+-    sails.modules.loadControllers(function modulesLoaded(err, modules) {
+-      if (err) return cb(err);
+-
+-      sails.controllers = _.merge(sails.controllers, modules);
+-
+-      // Register controllers
+-      _.each(sails.controllers, function(controller, controllerId) {
+-
+-        // Override whatever was here before
+-        if (!sailsUtil.isDictionary(hook.middleware[controllerId])) {
+-          hook.middleware[controllerId] = {};
+-        }
+-
+-        // Register this controller's actions
+-        _.each(controller, function(action, actionId) {
+-
+-          // action ids are case insensitive
+-          actionId = actionId.toLowerCase();
+-
+-          // If the action is set to `false`, explicitly disable it
+-          if (action === false) {
+-            delete hook.middleware[controllerId][actionId];
+-            return;
+-          }
+-
+-          // Ignore non-actions (special properties)
+-          //
+-          // Properties like these are injected by `moduleloader`
+-          // Ideally they should be hidden in the prototype or omitted instead
+-          // of this blanket approach.  This approach has worked for a long time,
+-          // but should not be relied upon- even within core (since a change is likely
+-          // in Sails v1.0)
+-          if (_.isString(action) || _.isBoolean(action)) {
+-            return;
+-          }
+-
+-          // Otherwise mix it in (this will override CRUD blueprints from above)
+-          action._middlewareType = 'ACTION: ' + controllerId + '/' + actionId;
+-          hook.middleware[controllerId][actionId] = action;
+-          hook.explicitActions[controllerId] = hook.explicitActions[controllerId] || {};
+-          hook.explicitActions[controllerId][actionId] = true;
+-        });
+-
+-      });
+-
+-      return cb();
+-    });
+-  };
+-
+-};
+-
+diff --git a/lib/hooks/moduleloader/index.js b/lib/hooks/moduleloader/index.js
+index 87c872e..fe1445d 100644
+--- a/lib/hooks/moduleloader/index.js
++++ b/lib/hooks/moduleloader/index.js
+@@ -15,7 +15,7 @@ module.exports = function(sails) {
+   /**
+    * Module loader
+    *
+-   * Load code files from a Sails app into memory; modules like controllers,
++   * Load code files from a Sails app into memory; modules like rockets,
+    * models, services, config, etc.
+    */
+   return {
+@@ -40,8 +40,8 @@ module.exports = function(sails) {
+ 
+           // Server-Side Code
+           //
+-          // For `controllers` hook
+-          controllers: path.resolve(config.appPath, 'api/controllers'),
++          // For `rockets` hook
++          rockets: path.resolve(config.appPath, 'api/rockets'),
+           // For `policies` hook
+           policies: path.resolve(config.appPath, 'api/policies'),
+           // For `services` hook
+@@ -209,8 +209,8 @@ module.exports = function(sails) {
+ 
+         // Server-Side Code
+         //
+-        // For `controllers` hook
+-        controllers: path.resolve(sails.config.appPath, sails.config.paths.controllers),
++        // For `rockets` hook
++        rockets: path.resolve(sails.config.appPath, sails.config.paths.rockets),
+         // For `policies` hook
+         policies: path.resolve(sails.config.appPath, sails.config.paths.policies),
+         // For `services` hook
+@@ -314,15 +314,15 @@ module.exports = function(sails) {
+     },
+ 
+     /**
+-     * Load app controllers
++     * Load app rockets
+      *
+      * @param {Object} options
+      * @param {Function} cb
+      */
+-    loadControllers: function (cb) {
++    loadRockets: function (cb) {
+       includeAll.optional({
+-        dirname: sails.config.paths.controllers,
+-        filter: new RegExp('(.+)Controller\\.(' + sails.config.moduleloader.sourceExt.join('|') + ')$'),
++        dirname: sails.config.paths.rockets,
++        filter: new RegExp('(.+)Rocket\\.(' + sails.config.moduleloader.sourceExt.join('|') + ')$'),
+         flatten: true,
+         keepDirectoryPath: true
+       }, bindToSails(cb));
+diff --git a/lib/hooks/policies/README.md b/lib/hooks/policies/README.md
+index 1290ca8..1d13305 100644
+--- a/lib/hooks/policies/README.md
++++ b/lib/hooks/policies/README.md
+@@ -12,7 +12,7 @@ This hook's responsibilities are:
+ 1. Use `sails.modules` to read policies from the user's app into `self.middleware`.
+ 2. Normalize the policy mapping config (`sails.config.policies`)
+ 3. Listen for `route:typeUnknown` and bind a policy if the route requests it.
+-4. Listen for `router:before` and when it fires, transform loaded middleware that match the policy mapping config (i.e. controller actions) to arrays of functions, where the original middleware is "protected" by one or more relevant policy middleware.
++4. Listen for `router:before` and when it fires, transform loaded middleware that match the policy mapping config (i.e. rocket actions) to arrays of functions, where the original middleware is "protected" by one or more relevant policy middleware.
+ 
+ 
+ 
+diff --git a/lib/hooks/policies/index.js b/lib/hooks/policies/index.js
+index 405ca67..eb5e4af 100644
+--- a/lib/hooks/policies/index.js
++++ b/lib/hooks/policies/index.js
+@@ -36,7 +36,7 @@ module.exports = function(sails) {
+         cb();
+       }.bind(this));
+ 
+-      // Before routing, curry controller functions with appropriate policy chains
++      // Before routing, curry rocket functions with appropriate policy chains
+       sails.on('router:before', this.bindPolicies);
+     },
+ 
+@@ -58,7 +58,7 @@ module.exports = function(sails) {
+     },
+ 
+     /**
+-     * Curry the policy chains into the appropriate controller functions
++     * Curry the policy chains into the appropriate rocket functions
+      *
+      * @api private
+      */
+@@ -66,56 +66,56 @@ module.exports = function(sails) {
+       // Build / normalize policy config
+       this.mapping = this.buildPolicyMap();
+ 
+-      // Bind a set of policies to a set of controllers
++      // Bind a set of policies to a set of rockets
+       // (prepend policy chains to original middleware)
+       var mapping = this.mapping;
+-      var middlewareSet = sails.middleware.controllers;
++      var middlewareSet = sails.middleware.rockets;
+       _.each(middlewareSet, function (_c, id) {
+ 
+         var topLevelPolicyId = mapping[id];
+         var actions, actionFn;
+-        var controller = middlewareSet[id];
++        var rocket = middlewareSet[id];
+ 
+-        // If a policy doesn't exist for this controller, use '*'
++        // If a policy doesn't exist for this rocket, use '*'
+         if (_.isUndefined(topLevelPolicyId) ) {
+           topLevelPolicyId = mapping['*'];
+         }
+ 
+         // Build list of actions
+-        if (util.isDictionary(controller) ) {
+-          actions = _.functions(controller);
++        if (util.isDictionary(rocket) ) {
++          actions = _.functions(rocket);
+         }
+ 
+-        // If this is a controller policy, apply it immediately
++        // If this is a rocket policy, apply it immediately
+         if (!util.isDictionary(topLevelPolicyId) ) {
+ 
+-          // :: Controller is a container object
++          // :: Rocket is a container object
+           // -> apply the policy to all the actions
+-          if (util.isDictionary(controller) ) {
+-            // sails.log.verbose('Applying policy (' + topLevelPolicyId + ') to controller\'s (' + id + ') actions...');
++          if (util.isDictionary(rocket) ) {
++            // sails.log.verbose('Applying policy (' + topLevelPolicyId + ') to rocket\'s (' + id + ') actions...');
+             _.each(actions, function(actionId) {
+-              actionFn = controller[actionId];
+-              controller[actionId] = topLevelPolicyId.concat([actionFn]);
+-              // sails.log.verbose('Applying policy to ' + id + '.' + actionId + '...', controller[actionId]);
++              actionFn = rocket[actionId];
++              rocket[actionId] = topLevelPolicyId.concat([actionFn]);
++              // sails.log.verbose('Applying policy to ' + id + '.' + actionId + '...', rocket[actionId]);
+             });
+             return;
+           }
+ 
+-          // :: Controller is a function
++          // :: Rocket is a function
+           // -> apply the policy directly
+-          // sails.log.verbose('Applying policy (' + topLevelPolicyId + ') to top-level controller middleware fn (' + id + ')...');
+-          middlewareSet[id] = topLevelPolicyId.concat(controller);
++          // sails.log.verbose('Applying policy (' + topLevelPolicyId + ') to top-level rocket middleware fn (' + id + ')...');
++          middlewareSet[id] = topLevelPolicyId.concat(rocket);
+         }
+ 
+         // If this is NOT a top-level policy, and merely a container of other policies,
+-        // iterate through each of this controller's actions and apply policies in a way that makes sense
++        // iterate through each of this rocket's actions and apply policies in a way that makes sense
+         else {
+           _.each(actions, function(actionId) {
+ 
+             var actionPolicy = mapping[id][actionId];
+             // sails.log.verbose('Mapping policies to actions.... ', actions);
+ 
+-            // If a policy doesn't exist for this controller/action, use the controller-local '*'
++            // If a policy doesn't exist for this rocket/action, use the rocket-local '*'
+             if (_.isUndefined(actionPolicy) ) {
+               actionPolicy = mapping[id]['*'];
+             }
+@@ -126,14 +126,14 @@ module.exports = function(sails) {
+             }
+             // sails.log.verbose('Applying policy (' + actionPolicy + ') to action (' + id + '.' + actionId + ')...');
+ 
+-            actionFn = controller[actionId];
+-            controller[actionId] = actionPolicy.concat([actionFn]);
++            actionFn = rocket[actionId];
++            rocket[actionId] = actionPolicy.concat([actionFn]);
+           });
+         }
+       });//</each in middlewareSet>
+ 
+       // Emit event to let other hooks know we're ready to go
+-      sails.log.verbose('Policy-controller bindings complete!');
++      sails.log.verbose('Policy-rocket bindings complete!');
+       sails.emit('hook:policies:bound');
+     },
+ 
+@@ -147,29 +147,29 @@ module.exports = function(sails) {
+      */
+     buildPolicyMap: function () {
+       var mapping = { };
+-      _.each(sails.config.policies, function (_policy, controllerId) {
++      _.each(sails.config.policies, function (_policy, rocketId) {
+ 
+-        // Accept `FooController` or `foo`
++        // Accept `FooRocket` or `foo`
+         // Case-insensitive
+-        controllerId = util.normalizeControllerId(controllerId);
++        rocketId = util.normalizeRocketId(rocketId);
+ 
+-        // Controller-level policy ::
+-        // Just map the policy to the controller directly
++        // Rocket-level policy ::
++        // Just map the policy to the rocket directly
+         if (!util.isDictionary(_policy)) {
+-          mapping[controllerId] = policyHookDef.normalizePolicy(_policy);
++          mapping[rocketId] = policyHookDef.normalizePolicy(_policy);
+           return;
+         }
+ 
+         // Policy mapping contains a sub-object ::
+         // So we need to dive in and build/normalize the policy mapping from here
+-        // Mapping each policy to each action for this controller
+-        mapping[controllerId] = {};
++        // Mapping each policy to each action for this rocket
++        mapping[rocketId] = {};
+         _.each( _policy, function (__policy, actionId) {
+ 
+           // Case-insensitive
+           actionId = actionId.toLowerCase();
+ 
+-          mapping[controllerId][actionId] = policyHookDef.normalizePolicy(__policy);
++          mapping[rocketId][actionId] = policyHookDef.normalizePolicy(__policy);
+         });
+       });
+ 
+diff --git a/lib/hooks/responses/defaults/serverError.js b/lib/hooks/responses/defaults/serverError.js
+index a6f8a27..d5faee7 100644
+--- a/lib/hooks/responses/defaults/serverError.js
++++ b/lib/hooks/responses/defaults/serverError.js
+@@ -15,7 +15,7 @@ var sendBuiltinResponse = require('../helpers/build-outlet-function');
+  * return res.serverError(err, 'some/specific/error/view');
+  *
+  * NOTE:
+- * If something throws in a policy or controller, or an internal
++ * If something throws in a policy or rocket, or an internal
+  * error is encountered, Sails will call `res.serverError()`
+  * automatically.
+  */
+diff --git a/lib/hooks/rockets/README.md b/lib/hooks/rockets/README.md
+new file mode 100644
+index 0000000..544bc7c
+--- /dev/null
++++ b/lib/hooks/rockets/README.md
+@@ -0,0 +1,59 @@
++# rockets (Core Hook)
++
++
++## Status
++
++> ##### Stability: [2](https://github.com/balderdashy/sails-docs/blob/master/contributing/stability-index.md) - Stable
++
++
++
++## Dependencies
++
++In order for this hook to load, the following other hooks must have already finished loading:
++
++- moduleloader
++- userconfig
++
++
++## Dependents
++
++If this hook is disabled, in order for Sails to load, the following other core hooks must also be disabled:
++
++- blueprints
++
++
++## Purpose
++
++This hook's responsibilities are:
++
++
++##### Load adapters
++
++When Sails loads, this hook calls out to `sails.modules.loadRockets()` (exposed by the `moduleloader`), loading all of this app's rockets into `sails.hooks.rockets.middleware`.
++
++
++
++##### Handle rocket/action route target syntax
++
++This hook listens for `route:typeUnknown` events which are emitted on the `sails` app instance when explicit routes are bound (when `Router` is loaded after all the hooks).  This hook attempts to interpret the target syntax as pointing specifically at one of the app's rocket and action pairs.  Then, if it can, it binds the route for the rocket/action rocket.
++
++
++## Implicit Defaults
++_N/A_
++
++
++## Events
++
++##### `hook:rockets:loaded`
++
++Emitted when this hook has been automatically loaded by Sails core, and triggered the callback in its `initialize` function.
++
++
++
++
++## FAQ
++
+++ Why is this a hook and not part of core?
++  + Makes it easier to change independently (e.g. you don't like the `*Rocket.js` suffix in your rocket filenames, or you want to do something else custom)
++
++> If you have a question that isn't covered here, please feel free to send a PR adding it to this section (even if you don't have the answer!)
+diff --git a/lib/hooks/rockets/index.js b/lib/hooks/rockets/index.js
+new file mode 100644
+index 0000000..a85855b
+--- /dev/null
++++ b/lib/hooks/rockets/index.js
+@@ -0,0 +1,76 @@
++/**
++ * Module dependencies.
++ */
++
++var _ = require('lodash');
++var toLoadAndRegisterRockets = require('./to-load-and-register-rockets');
++var toInterpretRouteSyntax = require('./to-interpret-route-syntax');
++
++
++
++/**
++ * `rockets` (Core Hook)
++ */
++module.exports = function(sails) {
++
++
++  return {
++
++
++    /**
++     * Implicit defaults which will be merged into sails.config before this hook is loaded...
++     * @type {Dictionary}
++     */
++    defaults: {},
++
++
++    /**
++     * Before any hooks have begun loading...
++     * (called automatically by Sails core)
++     */
++    configure: function() {
++      // This initial setup of `sails.rockets` was included here as an experimental
++      // feature so that these modules would be accessible for other hooks.  This will be
++      // deprecated in Sails v1.0 in favor of the ability for hook authors to register or unregister
++      // rockets programatically.  In addition, rockets will no longer be exposed
++      // on the `sails` app instance.
++      sails.rockets = {};
++    },
++
++
++    /**
++     * When the hook is loaded...
++     * (called automatically by Sails core)
++     */
++    initialize: function(cb) {
++
++      // In future versions of Sails, the empty registry of rockets can be initialized here:
++      // sails.rockets = {};
++
++      // Register route syntax for binding rockets.
++      var interpretRouteSyntax = toInterpretRouteSyntax(sails);
++      sails.on('route:typeUnknown', interpretRouteSyntax);
++
++      // Load rockets from app and register their actions as middleware.
++      // TODO -- make a public .reload() hook method, rather than exposing
++      // this private method on the hook object.  Doing this for now because
++      // certain apps in the wild are relying on it.
++      this.loadAndRegisterRockets = toLoadAndRegisterRockets(sails, this);
++      this.loadAndRegisterRockets(cb);
++    },
++
++
++    /**
++     * explicitActions
++     *
++     * This is used to hold a reference to explicit actions and rockets.
++     * << This will be removed in a future release of Sails. >>
++     *
++     * @type {Dictionary}
++     * @api private
++     */
++    explicitActions: {},
++
++
++  };
++};
+diff --git a/lib/hooks/rockets/to-interpret-route-syntax.js b/lib/hooks/rockets/to-interpret-route-syntax.js
+new file mode 100644
+index 0000000..2d8ebee
+--- /dev/null
++++ b/lib/hooks/rockets/to-interpret-route-syntax.js
+@@ -0,0 +1,272 @@
++/**
++ * Module dependencies.
++ */
++
++var _ = require('lodash');
++var sailsUtil = require('sails-util');
++
++
++/**
++ * @param  {SailsApp} sails  [Sails app]
++ * @return {Function}
++ */
++module.exports = function to(sails) {
++
++  /**
++   * `interpretRouteSyntax()`
++   *
++   * "Teach" router to understand references to rockets.
++   * This is the event handler for the 'route:typeUnknown' emitted on `sails`.
++   *
++   * @param  {Dictionary} route
++   *         @property {String} verb
++   *         @property {String} path
++   *         @property {Dictionary} target
++   *         @property {Dictionary} options
++   *
++   * @api private
++   */
++  return function interpretRouteSyntax (route) {
++    var target = route.target;
++    var path = route.path;
++    var verb = route.verb;
++    var options = route.options;
++
++
++    // Support various dictionary target notations, e.g.:
++    // `{ rocket: 'UserRocket' }`
++    if (_.isObject(target) && !_.isFunction(target) && !_.isArray(target)) {
++
++      // Merge target into `options` to get hold of relevant route options:
++      options = _.merge(options, target);
++      // Note: this (^) could be moved up into lib/router/bind.js, since its
++      // only pertinent for core options such as `skipAssets`.  There would need
++      // to be changes in other hooks as well.
++
++      // Support { rocket: 'FooRocket' } notation (with or without `action`)
++      if ( !_.isUndefined(target.rocket) ) {
++        return bindRocket(path, target, verb, options);
++      }
++
++      // Support resourceful sub-mappings for verbless routes
++      // e.g. '/someRoute': { post: 'FooRocket.bar', get: '...', /* ... */ }
++      // If verb was manually specified in route address (e.g. `get /someRoute`), ignore the sub-mappings.
++      //
++      ////////////////////////////////////////////////////////////////////////////////////
++      // Support for this routing syntax will be deprecated in Sails v1.0.
++      ////////////////////////////////////////////////////////////////////////////////////
++      if ( !options.detectedVerb ) {
++        if ( target.get ) { sails.router.bind (path, target['get'],'get', options); }
++        if ( target.post ) { sails.router.bind (path, target['post'],'post', options); }
++        if ( target.put ) { sails.router.bind (path, target['put'],'put', options); }
++        if ( target['delete'] ) { sails.router.bind (path, target['delete'],'delete', options); }
++        // If there is a legitimate use case for it, add other HTTP verbs here for completeness.
++      }
++
++      // Lone action syntax, e.g.:
++      // '/someRoute': { action: 'find', model: 'foo' }
++      //
++      // (useful for explicitly routing a URL to a blueprint action)
++      //
++      ////////////////////////////////////////////////////////////////////////////////////
++      // Support for this routing syntax will be deprecated in Sails v1.0.
++      ////////////////////////////////////////////////////////////////////////////////////
++      else if ( !_.isUndefined(target.action) ) {
++
++        // Merge target def. into route options:
++        options.action = target.action;
++
++        return bindBlueprintAction(path, target.action, verb, options);
++      }
++    }
++
++
++    // Support string ('FooRocket.bar') notation
++    else if (_.isString(target)) {
++
++      // Handle dot notation
++      var parsedTarget = target.match(/^([^.]+)\.?([^.]*)?$/);
++
++      // If target matches a rocket (or, if views hook enabled, a view)
++      // go ahead and assume that this is a dot notation route
++      var rocketId = sailsUtil.normalizeRocketId(parsedTarget[1]);
++      var actionId = _.isString(parsedTarget[2]) ? parsedTarget[2].toLowerCase() : 'index';
++
++      // If this is a known rocket, bind it
++      if ( rocketId && (
++        sails.middleware.rockets[rocketId] ||
++        (sails.config.hooks.views.blueprints && sails.middleware.views[rocketId])
++        )
++      ) {
++        return bindRocket (path, {
++          rocket: rocketId,
++          action: actionId
++        }, verb, options);
++      }
++    }
++
++    // Ignore unknown route syntax
++    // If it needs to be understood by another hook, the hook would have also received
++    // the typeUnknown event, so we're done.
++    return;
++  };
++
++
++
++  /**
++   * Bind route to a rocket/action.
++   *
++   * @param  {[type]} path   [description]
++   * @param  {[type]} target [description]
++   * @param  {[type]} verb   [description]
++   * @param  {[type]} options[description]
++   * @return {[type]}        [description]
++   * @api private
++   */
++  function bindRocket ( path, target, verb, options ) {
++
++    // Normalize rocket and action ids
++    var rocketId = sailsUtil.normalizeRocketId(target.rocket);
++    var actionId = _.isString(target.action) ? target.action.toLowerCase() : null;
++
++
++    // Look up appropriate rocket/action and make sure it exists
++    var rocket = sails.middleware.rockets[rocketId];
++
++    // Fall back to matching view
++    if (!rocket) {
++      rocket = sails.middleware.views[rocketId];
++    }
++
++    // If a rocket and/or action was specified,
++    // but it's not a match, warn the user
++    if ( ! ( rocket && _.isObject(rocket) )) {
++      sails.after('lifted', function () {
++        sails.log.error(
++          'Ignored attempt to bind route (' + path + ') to unknown rocket ::',
++          rocketId+'.'
++        );
++      });
++      return;
++    }
++    if ( actionId && !rocket[actionId] ) {
++      sails.after('lifted', function () {
++        sails.log.error(
++          'Ignored attempt to bind route (' + path + ') to unknown rocket.action ::',
++          rocketId + '.' + (actionId || 'index')
++        );
++      });
++      return;
++    }
++
++    // (if unspecified, default actionId to 'index'
++    actionId = actionId || 'index';
++
++    // Merge the target rocket/action into our route options:
++    options.rocket = rocketId;
++    options.action = actionId;
++
++
++    // Determine the model connected to this rocket either by:
++    // -> on the routes config
++    // -> on the rocket
++    //
++    ////////////////////////////////////////////////////////////////////////////////////
++    // Support for specifying `model` on the route target will be deprecated in Sails v1.0.
++    // (instead you will be able to override the action directly)
++    ////////////////////////////////////////////////////////////////////////////////////
++    var modelId = options.model || rocketId;
++
++
++
++    // If the orm hook is enabled, it has already been loaded by this time,
++    // so just double-check to see if the attached model exists in `sails.models`.
++    //
++    ////////////////////////////////////////////////////////////////////////////////////
++    // In Sails v1.0, this logic will be implemented by the blueprints hook rather than here.
++    ////////////////////////////////////////////////////////////////////////////////////
++    if (sails.hooks.orm && sails.models && sails.models[modelId]) {
++
++      // If a model with matching identity exists,
++      // extend route options with the id of the model.
++      options.model = modelId;
++
++      var Model = sails.models[modelId];
++
++      // Mix in the known associations for this model to the route options.
++      options = _.merge({ associations: _.cloneDeep(Model.associations) }, options);
++
++      // Mix in the relevant blueprint config
++      options = _.defaults(options, {
++        populate: sails.config.blueprints.populate,
++        defaultLimit: sails.config.blueprints.defaultLimit
++      });
++
++    }
++
++
++    // Now bind the specified action-- our "subTarget"
++    var subTarget = rocket[actionId];
++    //
++    // But first, if this is not an array, then wrap it in one (non-destructive)
++    if ( !_.isArray(subTarget) ) {
++      subTarget = [ subTarget ];
++    }
++    //
++    // Now we have an array of functions, so bind each one to the route address in order.
++    _.each(subTarget, function bindEachMiddlewareInSubTarget (fn) {
++      sails.router.bind(path, rocketHandler(fn), verb, options);
++    });
++
++
++
++    // Wrap up the rocket middleware to supply access to
++    // the original target when requests comes in
++    function rocketHandler (originalFn) {
++
++      if ( !_.isFunction(originalFn) ) {
++        sails.after('lifted', function () {
++          sails.log.error(
++            'In '+rocketId + '.' + actionId+', ignored invalid attempt to bind route to a non-function rocket:',
++            originalFn, 'for path: ', path, verb ? ('and verb: ' + verb) : '');
++        });
++        return;
++      }
++
++      // Bind intercepted middleware function to route
++      return originalFn;
++    }
++
++    return;
++  }
++
++
++  /**
++   * Bind specified blueprint action to the specified route.
++   *
++   * @param  {[type]} path              [description]
++   * @param  {[type]} blueprintActionID [description]
++   * @param  {[type]} verb              [description]
++   * @param  {[type]} options           [description]
++   * @return {[type]}                   [description]
++   */
++  function bindBlueprintAction (path, blueprintActionID, verb, options){
++
++    // Look up appropriate blueprint action and make sure it exists
++    var blueprint = sails.middleware.blueprints[blueprintActionID];
++
++    // If a 'blueprint' was specified, but it doesn't exist, warn the user and ignore it.
++    if ( ! ( blueprint && _.isFunction(blueprint) )) {
++      sails.after('lifted', function () {
++        sails.log.error(
++          'Ignored attempt to bind route (' + path + ') to unknown blueprint action (`'+blueprintActionID+'`).'
++        );
++      });
++      return;
++    }
++
++    sails.router.bind(path, blueprint, verb, options);
++  }
++
++};
++
+diff --git a/lib/hooks/rockets/to-load-and-register-rockets.js b/lib/hooks/rockets/to-load-and-register-rockets.js
+new file mode 100644
+index 0000000..7f7868b
+--- /dev/null
++++ b/lib/hooks/rockets/to-load-and-register-rockets.js
+@@ -0,0 +1,83 @@
++/**
++ * Module dependencies.
++ */
++
++var _ = require('lodash');
++var sailsUtil = require('sails-util');
++
++
++/**
++ * @param  {SailsApp} sails  [Sails app]
++ * @param  {Hook} hook       [instantiated hook]
++ * @return {Function}
++ */
++module.exports = function to(sails, hook) {
++
++  /**
++   * `loadAndRegisterRockets()`
++   *
++   * Wipe everything and (re)load middleware from rockets. Merge any
++   * rockets already defined in the sails.rockets namespace.
++   *
++   * @api private
++   */
++  return function loadAndRegisterRockets (cb) {
++
++    // Remove all rockets from middleware hash,
++    // but retain the reference between this and sails.middleware.rockets
++    _.each(_.keys(hook.middleware), function(key) {
++      delete hook.middleware[key];
++    });
++
++    // Load app rockets
++    sails.modules.loadRockets(function modulesLoaded(err, modules) {
++      if (err) return cb(err);
++
++      sails.rockets = _.merge(sails.rockets, modules);
++
++      // Register rockets
++      _.each(sails.rockets, function(rocket, rocketId) {
++
++        // Override whatever was here before
++        if (!sailsUtil.isDictionary(hook.middleware[rocketId])) {
++          hook.middleware[rocketId] = {};
++        }
++
++        // Register this rocket's actions
++        _.each(rocket, function(action, actionId) {
++
++          // action ids are case insensitive
++          actionId = actionId.toLowerCase();
++
++          // If the action is set to `false`, explicitly disable it
++          if (action === false) {
++            delete hook.middleware[rocketId][actionId];
++            return;
++          }
++
++          // Ignore non-actions (special properties)
++          //
++          // Properties like these are injected by `moduleloader`
++          // Ideally they should be hidden in the prototype or omitted instead
++          // of this blanket approach.  This approach has worked for a long time,
++          // but should not be relied upon- even within core (since a change is likely
++          // in Sails v1.0)
++          if (_.isString(action) || _.isBoolean(action)) {
++            return;
++          }
++
++          // Otherwise mix it in (this will override CRUD blueprints from above)
++          action._middlewareType = 'ACTION: ' + rocketId + '/' + actionId;
++          hook.middleware[rocketId][actionId] = action;
++          hook.explicitActions[rocketId] = hook.explicitActions[rocketId] || {};
++          hook.explicitActions[rocketId][actionId] = true;
++        });
++
++      });
++
++      return cb();
++    });
++  };
++
++};
++
+diff --git a/lib/hooks/views/res.view.js b/lib/hooks/views/res.view.js
+index b6b0bfb..e42474c 100644
+--- a/lib/hooks/views/res.view.js
++++ b/lib/hooks/views/res.view.js
+@@ -75,7 +75,7 @@ module.exports = function _addResViewMethod(req, res, next) {
+ 
+     // sails.log.silly('Running res.view() with arguments:',arguments);
+ 
+-    // By default, generate a path to the view using what we know about the controller+action
++    // By default, generate a path to the view using what we know about the rocket+action
+     var relPathToView;
+ 
+     // Ensure req.target is an object, then merge it into req.options
+@@ -83,9 +83,9 @@ module.exports = function _addResViewMethod(req, res, next) {
+     //  on `req.target` in previous versions of Sails)
+     req.options = _.defaults(req.options, req.target || {});
+ 
+-    // Try to guess the view by looking at the controller/action
+-    if (!req.options.view && (req.options.controller || req.options.model)) {
+-      relPathToView = (req.options.controller||req.options.model) + '/' + (req.options.action || 'index');
++    // Try to guess the view by looking at the rocket/action
++    if (!req.options.view && (req.options.rocket || req.options.model)) {
++      relPathToView = (req.options.rocket||req.options.model) + '/' + (req.options.action || 'index');
+     }
+     // Use the new view config
+     else {relPathToView = req.options.view;}
+diff --git a/test/README.md b/test/README.md
+index 439d1a5..3994858 100644
+--- a/test/README.md
++++ b/test/README.md
+@@ -29,7 +29,7 @@ We should strive to avoid tests which verify exclusivity-- it cripples our abili
+ 
+ For instance, if you're writing a test to check that the appropriate files have been created with `sails new`, it would make sense to check for those files, but it would _not_ make sense to ensure that ONLY those files were created. (i.e. adding a new file should not break the tests)
+ 
+-Another example is a test which verifies the correctness of blueprint configuration, e.g. `sails.config.blueprints.rest`.  The test should check that blueprints behave properly with the `rest` config enabled and disabled.  We could change the configuration, add more controller-specific options, etc., and we'd only need to write new tests.
++Another example is a test which verifies the correctness of blueprint configuration, e.g. `sails.config.blueprints.rest`.  The test should check that blueprints behave properly with the `rest` config enabled and disabled.  We could change the configuration, add more rocket-specific options, etc., and we'd only need to write new tests.
+ 
+ If, on the other hand, our strategy for testing the behavior of the blueprints involved evaluating the behavior AND THEN making a judgement on what the config "_should_" look like, we'd have to modify the tests when we add new options.  This may not sound like a big deal, but it can grow out of proportion quickly!
+ 
+diff --git a/test/hooks/blueprints/initialize.test.js b/test/hooks/blueprints/initialize.test.js
+index a806502..d092974 100644
+--- a/test/hooks/blueprints/initialize.test.js
++++ b/test/hooks/blueprints/initialize.test.js
+@@ -22,27 +22,27 @@ describe('Blueprints hook', function (){
+ 
+ 		// TODO: test that blueprint actions are loaded
+ 		// TODO: test shadow routes are bound for:
+-		//					+ all controller actions
+-		//					+ controllers' index action
++		//					+ all rocket actions
++		//					+ rockets' index action
+ 	});
+ 
+ 
+ 
+-	describe('with controllers hook', function (){
++	describe('with rockets hook', function (){
+ 		$Sails.load({
+ 			globals: false,
+ 			loadHooks: [
+ 				'moduleloader',
+ 				'userconfig',
+-				'controllers',
++				'rockets',
+ 				'blueprints'
+ 			]
+ 		});
+ 
+ 		// TODO: test that blueprint actions are loaded
+ 		// TODO: test shadow routes are bound:
+-		//			+ controller.*()
+-		//			+ controller.index()
++		//			+ rocket.*()
++		//			+ rocket.index()
+ 		//			+ CRUD methods (find(),create(),etc.)
+ 		//				+ RESTful (GET,POST,PUT,DELETE)
+ 		//				+ URL-bar shortcuts (/find, /create, etc.)
+@@ -64,8 +64,8 @@ describe('Blueprints hook', function (){
+ 
+ 		// TODO: test that blueprint actions are loaded
+ 		// TODO: test shadow routes are bound:
+-		//			+ controller.*()
+-		//			+ controller.index()
++		//			+ rocket.*()
++		//			+ rocket.index()
+ 		//			+ CRUD methods (find(),create(),etc.)
+ 		//				+ RESTful (GET,POST,PUT,DELETE)
+ 		//				+ URL-bar shortcuts (/find, /create, etc.)
+@@ -73,22 +73,22 @@ describe('Blueprints hook', function (){
+ 	});
+ 
+ 
+-	describe('with ORM and controllers hooks', function (){
++	describe('with ORM and rockets hooks', function (){
+ 		$Sails.load({
+ 			globals: false,
+ 			loadHooks: [
+ 				'moduleloader',
+ 				'userconfig',
+ 				'orm',
+-				'controllers',
++				'rockets',
+ 				'blueprints'
+ 			]
+ 		});
+ 
+ 		// TODO: test that blueprint actions are loaded
+ 		// TODO: test shadow routes are bound:
+-		//			+ controller.*()
+-		//			+ controller.index()
++		//			+ rocket.*()
++		//			+ rocket.index()
+ 		//			+ CRUD methods (find(),create(),etc.)
+ 		//				+ RESTful (GET,POST,PUT,DELETE)
+ 		//				+ URL-bar shortcuts (/find, /create, etc.)
+@@ -109,8 +109,8 @@ describe('Blueprints hook', function (){
+ 
+ 		// TODO: test that blueprint actions are loaded
+ 		// TODO: test shadow routes are bound:
+-		//			+ controller.*()
+-		//			+ controller.index()
++		//			+ rocket.*()
++		//			+ rocket.index()
+ 		//			+ CRUD methods (find(),create(),etc.)
+ 		//				+ RESTful (GET,POST,PUT,DELETE)
+ 		//				+ URL-bar shortcuts (/find, /create, etc.)
+@@ -118,13 +118,13 @@ describe('Blueprints hook', function (){
+ 	});
+ 
+ 
+-	describe('with controllers and policies hooks', function (){
++	describe('with rockets and policies hooks', function (){
+ 		$Sails.load({
+ 			globals: false,
+ 			loadHooks: [
+ 				'moduleloader',
+ 				'userconfig',
+-				'controllers',
++				'rockets',
+ 				'policies',
+ 				'blueprints'
+ 			]
+@@ -132,8 +132,8 @@ describe('Blueprints hook', function (){
+ 
+ 		// TODO: test that blueprint actions are loaded
+ 		// TODO: test shadow routes are bound:
+-		//			+ controller.*()
+-		//			+ controller.index()
++		//			+ rocket.*()
++		//			+ rocket.index()
+ 		//			+ CRUD methods (find(),create(),etc.)
+ 		//				+ RESTful (GET,POST,PUT,DELETE)
+ 		//				+ URL-bar shortcuts (/find, /create, etc.)
+@@ -141,13 +141,13 @@ describe('Blueprints hook', function (){
+ 	});
+ 
+ 
+-	describe('with controllers, policies, and orm hooks', function (){
++	describe('with rockets, policies, and orm hooks', function (){
+ 		$Sails.load({
+ 			globals: false,
+ 			loadHooks: [
+ 				'moduleloader',
+ 				'userconfig',
+-				'controllers',
++				'rockets',
+ 				'policies',
+ 				'orm',
+ 				'blueprints'
+@@ -156,8 +156,8 @@ describe('Blueprints hook', function (){
+ 
+ 		// TODO: test that blueprint actions are loaded
+ 		// TODO: test shadow routes are bound:
+-		//			+ controller.*()
+-		//			+ controller.index()
++		//			+ rocket.*()
++		//			+ rocket.index()
+ 		//			+ CRUD methods (find(),create(),etc.)
+ 		//				+ RESTful (GET,POST,PUT,DELETE)
+ 		//				+ URL-bar shortcuts (/find, /create, etc.)
+diff --git a/test/integration/fixtures/hooks/installable/add-policy/index.js b/test/integration/fixtures/hooks/installable/add-policy/index.js
+index 1c1cdd4..4f6e6ca 100644
+--- a/test/integration/fixtures/hooks/installable/add-policy/index.js
++++ b/test/integration/fixtures/hooks/installable/add-policy/index.js
+@@ -5,7 +5,7 @@ module.exports = function(sails) {
+    */
+   var requiredHooks = [
+     'blueprints',
+-    'controllers',
++    'rockets',
+     'http',
+     'policies',
+   ];
+diff --git a/test/integration/fixtures/sampleapp/api/controllers/EmptyController.js b/test/integration/fixtures/sampleapp/api/controllers/EmptyController.js
+deleted file mode 100644
+index f053ebf..0000000
+--- a/test/integration/fixtures/sampleapp/api/controllers/EmptyController.js
++++ /dev/null
+@@ -1 +0,0 @@
+-module.exports = {};
+diff --git a/test/integration/fixtures/sampleapp/api/controllers/PetController.js b/test/integration/fixtures/sampleapp/api/controllers/PetController.js
+deleted file mode 100644
+index 453d0f1..0000000
+--- a/test/integration/fixtures/sampleapp/api/controllers/PetController.js
++++ /dev/null
+@@ -1,8 +0,0 @@
+-module.exports = {
+-
+-  watch: function(req, res) {
+-    req._sails.models.pet.watch(req);
+-    res.send(200);
+-  }
+-
+-};
+diff --git a/test/integration/fixtures/sampleapp/api/controllers/QuizController.js b/test/integration/fixtures/sampleapp/api/controllers/QuizController.js
+deleted file mode 100644
+index f053ebf..0000000
+--- a/test/integration/fixtures/sampleapp/api/controllers/QuizController.js
++++ /dev/null
+@@ -1 +0,0 @@
+-module.exports = {};
+diff --git a/test/integration/fixtures/sampleapp/api/controllers/TestController.js b/test/integration/fixtures/sampleapp/api/controllers/TestController.js
+deleted file mode 100644
+index 2dc0d3e..0000000
+--- a/test/integration/fixtures/sampleapp/api/controllers/TestController.js
++++ /dev/null
+@@ -1,37 +0,0 @@
+-module.exports = {
+-	verb: function(req, res) {
+-		res.send(req.route.method);
+-	},
+-
+-	dynamic: function(req, res) {
+-		res.send(req.route.keys);
+-	},
+-
+-	index: function(req, res) {
+-		res.send('index');
+-	},
+-
+-	find: function(req, res) {
+-		res.send('find');
+-	},
+-
+-  findOne: function(req, res) {
+-    res.send('findOne');
+-  },
+-
+-	create: function(req, res) {
+-		res.send('create');
+-	},
+-
+-	update: function(req, res) {
+-		res.send('update');
+-	},
+-
+-	destroy: function(req, res) {
+-		res.send('destroy');
+-	},
+-
+-	CapitalLetters: function(req, res) {
+-		res.send('CapitalLetters');
+-	}
+-};
+diff --git a/test/integration/fixtures/sampleapp/api/controllers/UserController.js b/test/integration/fixtures/sampleapp/api/controllers/UserController.js
+deleted file mode 100644
+index 13ea43b..0000000
+--- a/test/integration/fixtures/sampleapp/api/controllers/UserController.js
++++ /dev/null
+@@ -1,37 +0,0 @@
+-module.exports = {
+-
+-  watch: function(req, res) {
+-    req._sails.models.user.watch(req);
+-    res.send(200);
+-  },
+-
+-  message: function(req, res) {
+-    req._sails.models.user.findOne({
+-      user_id: 1
+-    }, function(err, user) {
+-      if (err) return res.json(500, {
+-        error: err
+-      });
+-      else if (!user) {
+-        return res.json(404,{
+-          error: 'Expected specified user (with user_id=1) to exist...'
+-        });
+-      } else {
+-        req._sails.models.user.message(user, {
+-          greeting: 'hello'
+-        }, req);
+-        return res.send(200);
+-      }
+-    });
+-  },
+-
+-  subscribe: function(req, res) {
+-
+-    req._sails.models.user.subscribe(req, {
+-      user_id: req.param('id')
+-    }, req.param('context'));
+-    res.send(200);
+-  }
+-
+-
+-};
+diff --git a/test/integration/fixtures/sampleapp/api/controllers/UserProfileController.js b/test/integration/fixtures/sampleapp/api/controllers/UserProfileController.js
+deleted file mode 100644
+index a099545..0000000
+--- a/test/integration/fixtures/sampleapp/api/controllers/UserProfileController.js
++++ /dev/null
+@@ -1 +0,0 @@
+-module.exports = {};
+\ No newline at end of file
+diff --git a/test/integration/fixtures/sampleapp/api/controllers/ViewTestController.js b/test/integration/fixtures/sampleapp/api/controllers/ViewTestController.js
+deleted file mode 100644
+index 854194f..0000000
+--- a/test/integration/fixtures/sampleapp/api/controllers/ViewTestController.js
++++ /dev/null
+@@ -1,23 +0,0 @@
+-module.exports = {
+-
+-	index: function(req, res, next) {
+-		res.view();
+-	},
+-
+-	create: function(req, res, next) {
+-		res.view();
+-	},
+-
+-  	viewOptions: function(req, res, next) {
+-    	res.view();
+-  	},
+-
+-  	viewOptionsOverride: function(req, res, next) {
+-    	res.view('viewtest/viewOptions', {foo:'!baz!'});
+-  	},
+-
+-  	csrf: function(req, res, next) {
+-  		res.view();
+-  	}
+-
+-};
+diff --git a/test/integration/fixtures/sampleapp/api/rockets/EmptyRocket.js b/test/integration/fixtures/sampleapp/api/rockets/EmptyRocket.js
+new file mode 100644
+index 0000000..f053ebf
+--- /dev/null
++++ b/test/integration/fixtures/sampleapp/api/rockets/EmptyRocket.js
+@@ -0,0 +1 @@
++module.exports = {};
+diff --git a/test/integration/fixtures/sampleapp/api/rockets/PetRocket.js b/test/integration/fixtures/sampleapp/api/rockets/PetRocket.js
+new file mode 100644
+index 0000000..453d0f1
+--- /dev/null
++++ b/test/integration/fixtures/sampleapp/api/rockets/PetRocket.js
+@@ -0,0 +1,8 @@
++module.exports = {
++
++  watch: function(req, res) {
++    req._sails.models.pet.watch(req);
++    res.send(200);
++  }
++
++};
+diff --git a/test/integration/fixtures/sampleapp/api/rockets/QuizRocket.js b/test/integration/fixtures/sampleapp/api/rockets/QuizRocket.js
+new file mode 100644
+index 0000000..f053ebf
+--- /dev/null
++++ b/test/integration/fixtures/sampleapp/api/rockets/QuizRocket.js
+@@ -0,0 +1 @@
++module.exports = {};
+diff --git a/test/integration/fixtures/sampleapp/api/rockets/TestRocket.js b/test/integration/fixtures/sampleapp/api/rockets/TestRocket.js
+new file mode 100644
+index 0000000..2dc0d3e
+--- /dev/null
++++ b/test/integration/fixtures/sampleapp/api/rockets/TestRocket.js
+@@ -0,0 +1,37 @@
++module.exports = {
++	verb: function(req, res) {
++		res.send(req.route.method);
++	},
++
++	dynamic: function(req, res) {
++		res.send(req.route.keys);
++	},
++
++	index: function(req, res) {
++		res.send('index');
++	},
++
++	find: function(req, res) {
++		res.send('find');
++	},
++
++  findOne: function(req, res) {
++    res.send('findOne');
++  },
++
++	create: function(req, res) {
++		res.send('create');
++	},
++
++	update: function(req, res) {
++		res.send('update');
++	},
++
++	destroy: function(req, res) {
++		res.send('destroy');
++	},
++
++	CapitalLetters: function(req, res) {
++		res.send('CapitalLetters');
++	}
++};
+diff --git a/test/integration/fixtures/sampleapp/api/rockets/UserProfileRocket.js b/test/integration/fixtures/sampleapp/api/rockets/UserProfileRocket.js
+new file mode 100644
+index 0000000..a099545
+--- /dev/null
++++ b/test/integration/fixtures/sampleapp/api/rockets/UserProfileRocket.js
+@@ -0,0 +1 @@
++module.exports = {};
+\ No newline at end of file
+diff --git a/test/integration/fixtures/sampleapp/api/rockets/UserRocket.js b/test/integration/fixtures/sampleapp/api/rockets/UserRocket.js
+new file mode 100644
+index 0000000..13ea43b
+--- /dev/null
++++ b/test/integration/fixtures/sampleapp/api/rockets/UserRocket.js
+@@ -0,0 +1,37 @@
++module.exports = {
++
++  watch: function(req, res) {
++    req._sails.models.user.watch(req);
++    res.send(200);
++  },
++
++  message: function(req, res) {
++    req._sails.models.user.findOne({
++      user_id: 1
++    }, function(err, user) {
++      if (err) return res.json(500, {
++        error: err
++      });
++      else if (!user) {
++        return res.json(404,{
++          error: 'Expected specified user (with user_id=1) to exist...'
++        });
++      } else {
++        req._sails.models.user.message(user, {
++          greeting: 'hello'
++        }, req);
++        return res.send(200);
++      }
++    });
++  },
++
++  subscribe: function(req, res) {
++
++    req._sails.models.user.subscribe(req, {
++      user_id: req.param('id')
++    }, req.param('context'));
++    res.send(200);
++  }
++
++
++};
+diff --git a/test/integration/fixtures/sampleapp/api/rockets/ViewTestRocket.js b/test/integration/fixtures/sampleapp/api/rockets/ViewTestRocket.js
+new file mode 100644
+index 0000000..854194f
+--- /dev/null
++++ b/test/integration/fixtures/sampleapp/api/rockets/ViewTestRocket.js
+@@ -0,0 +1,23 @@
++module.exports = {
++
++	index: function(req, res, next) {
++		res.view();
++	},
++
++	create: function(req, res, next) {
++		res.view();
++	},
++
++  	viewOptions: function(req, res, next) {
++    	res.view();
++  	},
++
++  	viewOptionsOverride: function(req, res, next) {
++    	res.view('viewtest/viewOptions', {foo:'!baz!'});
++  	},
++
++  	csrf: function(req, res, next) {
++  		res.view();
++  	}
++
++};
+diff --git a/test/integration/generate.test.js b/test/integration/generate.test.js
+index 588c2f5..e521302 100644
+--- a/test/integration/generate.test.js
++++ b/test/integration/generate.test.js
+@@ -77,33 +77,33 @@ describe('API and adapter generators', function() {
+     });
+   });
+ 
+-  describe('sails generate controller <controllerName>', function() {
+-    var controllerName = 'user';
++  describe('sails generate rocket <rocketName>', function() {
++    var rocketName = 'user';
+ 
+-    it('should throw an error if no controller name is specified', function(done) {
++    it('should throw an error if no rocket name is specified', function(done) {
+ 
+-      exec('node ' + sailsBin + ' generate controller', function(err) {
++      exec('node ' + sailsBin + ' generate rocket', function(err) {
+         assert.equal(err.code, 1);
+         done();
+       });
+     });
+ 
+-    it('should create a controller file in controllers folder', function(done) {
++    it('should create a rocket file in rockets folder', function(done) {
+ 
+-      exec('node ' + sailsBin + ' generate controller ' + controllerName, function(err) {
++      exec('node ' + sailsBin + ' generate rocket ' + rocketName, function(err) {
+         if (err) done(new Error(err));
+ 
+         assert.doesNotThrow(function() {
+-          fs.readFileSync('./api/controllers/' + capitalize(controllerName) + 'Controller.js', 'utf8');
++          fs.readFileSync('./api/rockets/' + capitalize(rocketName) + 'Rocket.js', 'utf8');
+         });
+ 
+         done();
+       });
+     });
+ 
+-    it('should throw an error if a controller with the same name exists', function(done) {
++    it('should throw an error if a rocket with the same name exists', function(done) {
+ 
+-      exec('node ' + sailsBin + ' generate controller ' + controllerName, function(err) {
++      exec('node ' + sailsBin + ' generate rocket ' + rocketName, function(err) {
+         assert.equal(err.code, 1);
+         done();
+       });
+@@ -168,7 +168,7 @@ describe('API and adapter generators', function() {
+       });
+     });
+ 
+-    it('should create a controller and a model file', function(done) {
++    it('should create a rocket and a model file', function(done) {
+ 
+       exec('node ' + sailsBin + ' generate api ' + apiName, function(err) {
+         if (err) done(new Error(err));
+@@ -178,14 +178,14 @@ describe('API and adapter generators', function() {
+         });
+ 
+         assert.doesNotThrow(function() {
+-          fs.readFileSync('./api/controllers/' + capitalize(apiName) + 'Controller.js', 'utf8');
++          fs.readFileSync('./api/rockets/' + capitalize(apiName) + 'Rocket.js', 'utf8');
+         });
+ 
+         done();
+       });
+     });
+ 
+-    it('should throw an error if a controller file and model file with the same name exists', function(done) {
++    it('should throw an error if a rocket file and model file with the same name exists', function(done) {
+ 
+       exec('node ' + sailsBin + ' generate api ' + apiName, function(err) {
+         assert.equal(err.code, 1);
+diff --git a/test/integration/hook.blueprints.blacklist.test.js b/test/integration/hook.blueprints.blacklist.test.js
+index b3df06e..3084e25 100644
+--- a/test/integration/hook.blueprints.blacklist.test.js
++++ b/test/integration/hook.blueprints.blacklist.test.js
+@@ -40,7 +40,7 @@ describe('blueprints :: ', function() {
+           };
+ 
+           fs.outputFileSync(path.resolve(__dirname,'../../testApp/api/models/Goal.js'), 'module.exports = ' + JSON.stringify(Goal) + ';');
+-          fs.outputFileSync(path.resolve(__dirname,'../../testApp/api/controllers/GoalController.js'), 'module.exports = {};');
++          fs.outputFileSync(path.resolve(__dirname,'../../testApp/api/rockets/GoalRocket.js'), 'module.exports = {};');
+           return done();
+         });
+       });
+diff --git a/test/integration/hook.cors_csrf.test.js b/test/integration/hook.cors_csrf.test.js
+index 1f32dea..2a7d6e3 100644
+--- a/test/integration/hook.cors_csrf.test.js
++++ b/test/integration/hook.cors_csrf.test.js
+@@ -61,62 +61,62 @@ describe('CORS and CSRF ::', function() {
+         fs.writeFileSync(path.resolve('../', appName, 'config/cors.js'), 'module.exports.cors = { origin: \'*\', allRoutes: true};');
+         var routeConfig = {
+           'GET /test/find': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'find',
+             cors: false
+           },
+           'GET /test/update': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'update',
+             cors: 'http://www.example.com'
+           },
+           'GET /test2': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'find',
+             cors: {
+               'exposeHeaders': 'x-custom-header'
+             }
+           },
+           'PUT /test': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'update',
+             cors: 'http://www.example.com'
+           },
+           'POST /test': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'create',
+             cors: 'http://www.different.com'
+           },
+           'DELETE /test': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'delete',
+             cors: false
+           },
+           'POST /test2': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'create',
+             cors: true
+           },
+           'OPTIONS /test2': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'index'
+           },
+           'PUT /test2': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'update'
+           },
+           'GET /test/patch': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'update',
+             cors: 'http://www.example.com:1338'
+           },
+           'GET /test/create': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'create',
+             cors: 'http://www.different.com'
+           },
+           'GET /test/destroy': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'destroy',
+             cors: {
+               origin: 'http://www.example.com',
+@@ -480,22 +480,22 @@ describe('CORS and CSRF ::', function() {
+         fs.writeFileSync(path.resolve('../', appName, 'config/cors.js'), "module.exports.cors = { 'origin': '*', 'allRoutes': false };");
+         var routeConfig = {
+           'GET /test/find': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'find',
+             cors: true
+           },
+           'GET /test/update': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'update',
+             cors: 'http://www.example.com'
+           },
+           'GET /test/create': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'create',
+             cors: 'http://www.different.com'
+           },
+           'GET /test/destroy': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'destroy',
+             cors: {
+               origin: 'http://www.example.com'
+@@ -624,22 +624,22 @@ describe('CORS and CSRF ::', function() {
+         fs.writeFileSync(path.resolve('../', appName, 'config/cors.js'), "module.exports.cors = { 'origin': 'http://www.example.com', 'allRoutes': true };");
+         var routeConfig = {
+           'GET /test/find': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'find',
+             cors: false
+           },
+           'GET /test/update': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'update',
+             cors: 'http://www.example.com'
+           },
+           'GET /test/create': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'create',
+             cors: 'http://www.different.com'
+           },
+           'GET /test/destroy': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'destroy',
+             cors: {
+               origin: 'http://www.example.com'
+@@ -777,7 +777,7 @@ describe('CORS and CSRF ::', function() {
+         fs.writeFileSync(path.resolve('../', appName, 'config/cors.js'), "module.exports.cors = { 'origin': '*', 'allRoutes': true, 'credentials': true};");
+         var routeConfig = {
+           'GET /test/destroy': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'destroy',
+             cors: {
+               origin: 'http://www.example.com',
+@@ -828,7 +828,7 @@ describe('CORS and CSRF ::', function() {
+         fs.writeFileSync(path.resolve('../', appName, 'config/cors.js'), 'module.exports.cors = { origin: \'*\', allRoutes: true, credentials: false};');
+         var routeConfig = {
+           'GET /test/destroy': {
+-            controller: 'TestController',
++            rocket: 'TestRocket',
+             action: 'destroy',
+             cors: {
+               origin: 'http://www.example.com',
+diff --git a/test/integration/hook.policies.test.js b/test/integration/hook.policies.test.js
+index 5fd1681..9d6d83c 100644
+--- a/test/integration/hook.policies.test.js
++++ b/test/integration/hook.policies.test.js
+@@ -95,7 +95,7 @@ describe('router :: ', function() {
+         fs.writeFileSync(path.resolve('../', appName, 'config/policies.js'), config);
+       });
+ 
+-      describe('a get request to /:controller', function() {
++      describe('a get request to /:rocket', function() {
+ 
+         it('should return a proper serverError with a message', function(done) {
+ 
+@@ -123,7 +123,7 @@ describe('router :: ', function() {
+         });
+       });
+ 
+-      describe('a get request to /:controller/:id', function() {
++      describe('a get request to /:rocket/:id', function() {
+ 
+         it('should NOT hit the `find` action', function(done) {
+ 
+@@ -209,7 +209,7 @@ describe('router :: ', function() {
+         fs.writeFileSync(path.resolve('../', appName, 'config/policies.js'), config);
+       });
+ 
+-      describe('a get request to /:controller', function() {
++      describe('a get request to /:rocket', function() {
+ 
+         it('should return a string', function(done) {
+ 
+@@ -239,7 +239,7 @@ describe('router :: ', function() {
+         fs.writeFileSync(path.resolve('../', appName, 'config/policies.js'), config);
+       });
+ 
+-      describe('a get request to /:controller', function() {
++      describe('a get request to /:rocket', function() {
+ 
+         it('should return a string', function(done) {
+ 
+@@ -271,7 +271,7 @@ describe('router :: ', function() {
+         fs.writeFileSync(path.resolve('../', appName, 'config/policies.js'), config);
+       });
+ 
+-      describe('a get request to /:controller', function() {
++      describe('a get request to /:rocket', function() {
+ 
+         it('should return a string', function(done) {
+ 
+diff --git a/test/integration/router.APIScaffold.test.js b/test/integration/router.APIScaffold.test.js
+index 8e8b818..955f068 100644
+--- a/test/integration/router.APIScaffold.test.js
++++ b/test/integration/router.APIScaffold.test.js
+@@ -52,7 +52,7 @@ describe('router :: ', function() {
+       appHelper.teardown();
+     });
+ 
+-    describe('a get request to /:controller/create', function() {
++    describe('a get request to /:rocket/create', function() {
+ 
+       it('should return JSON for a newly created instance of the test model', function(done) {
+ 
+@@ -68,7 +68,7 @@ describe('router :: ', function() {
+       });
+     });
+ 
+-    describe('a post request to /:controller/create', function() {
++    describe('a post request to /:rocket/create', function() {
+ 
+       it('should return JSON for a newly created instance of the test model', function(done) {
+ 
+@@ -85,7 +85,7 @@ describe('router :: ', function() {
+       });
+     });
+ 
+-    describe('a get request to /:controller', function() {
++    describe('a get request to /:rocket', function() {
+ 
+       it('should return JSON for all instances of the test model', function(done) {
+ 
+@@ -105,7 +105,7 @@ describe('router :: ', function() {
+       });
+     });
+ 
+-    describe('a get request to /:controller/:id', function() {
++    describe('a get request to /:rocket/:id', function() {
+ 
+       it('should return JSON for the instance of the test model with the specified id', function(done) {
+ 
+@@ -121,7 +121,7 @@ describe('router :: ', function() {
+       });
+     });
+ 
+-    describe('a put request to /:controller/:id', function() {
++    describe('a put request to /:rocket/:id', function() {
+ 
+       it('should return JSON for the updated instance of the test model', function(done) {
+ 
+@@ -137,7 +137,7 @@ describe('router :: ', function() {
+       });
+     });
+ 
+-    describe('a post request to /:controller/:id', function() {
++    describe('a post request to /:rocket/:id', function() {
+ 
+       it('should return JSON for the updated instance of the test model', function(done) {
+ 
+@@ -153,7 +153,7 @@ describe('router :: ', function() {
+       });
+     });
+ 
+-    describe('a put request to /:controller/:id attempting to change the primary key', function() {
++    describe('a put request to /:rocket/:id attempting to change the primary key', function() {
+ 
+       it('should return JSON for the updated instance of the test model, but should not update the primary key', function(done) {
+ 
+@@ -171,7 +171,7 @@ describe('router :: ', function() {
+     });
+ 
+ 
+-    describe('a delete request to /:controller/:id', function() {
++    describe('a delete request to /:rocket/:id', function() {
+ 
+       it('should return JSON for the destroyed instance of the test model', function(done) {
+ 
+@@ -187,7 +187,7 @@ describe('router :: ', function() {
+       });
+     });
+ 
+-    describe('a post of JSON array request to /:controller/create', function() {
++    describe('a post of JSON array request to /:rocket/create', function() {
+       it('should return JSON array for a newly created instances of the test model', function(done) {
+         httpHelper.testRoute('post', {
+           url: 'empty/create',
+@@ -215,7 +215,7 @@ describe('router :: ', function() {
+         });
+       });
+ 
+-      it('should bind blueprint actions to plural controller names', function(done) {
++      it('should bind blueprint actions to plural rocket names', function(done) {
+         httpHelper.testRoute('get', {
+           url: 'empties',
+           json: true
+@@ -227,7 +227,7 @@ describe('router :: ', function() {
+         });
+       });
+ 
+-      it('should bind blueprint actions to plural controller names (quiz => quizzes)', function(done) {
++      it('should bind blueprint actions to plural rocket names (quiz => quizzes)', function(done) {
+         httpHelper.testRoute('get', {
+           url: 'quizzes',
+           json: true
+@@ -239,7 +239,7 @@ describe('router :: ', function() {
+         });
+       });
+ 
+-      it('should not bind blueprint actions to singular controller names', function(done) {
++      it('should not bind blueprint actions to singular rocket names', function(done) {
+         httpHelper.testRoute('get', {
+           url: 'empty',
+           json: true
+@@ -251,7 +251,7 @@ describe('router :: ', function() {
+         });
+       });
+ 
+-      it('should not bind blueprint actions to singular controller names (quiz)', function(done) {
++      it('should not bind blueprint actions to singular rocket names (quiz)', function(done) {
+         httpHelper.testRoute('get', {
+           url: 'quiz',
+           json: true
+diff --git a/test/integration/router.defaultController.test.js b/test/integration/router.defaultController.test.js
+deleted file mode 100644
+index 13dde11..0000000
+--- a/test/integration/router.defaultController.test.js
++++ /dev/null
+@@ -1,163 +0,0 @@
+-/**
+- * Module dependencies
+- */
+-
+-var util = require('util');
+-var assert = require('assert');
+-var httpHelper = require('./helpers/httpHelper.js');
+-var appHelper = require('./helpers/appHelper');
+-
+-
+-
+-/**
+- * Errors
+- */
+-
+-var Err = {
+-  badResponse: function(response) {
+-    return 'Wrong server response!  Response :::\n' + util.inspect(response.body);
+-  }
+-};
+-
+-
+-
+-/**
+- * Tests
+- */
+-
+-describe('router :: ', function() {
+-  describe('Default controller routing', function() {
+-    var appName = 'testApp';
+-
+-    before(function(done) {
+-      appHelper.build(done);
+-    });
+-
+-    beforeEach(function(done) {
+-      appHelper.lift(function(err, sails) {
+-        if (err) {
+-          throw new Error(err);
+-        }
+-        sailsprocess = sails;
+-        setTimeout(done, 100);
+-      });
+-    });
+-
+-    afterEach(function(done) {
+-      sailsprocess.lower(function() {
+-        setTimeout(done, 100);
+-      });
+-    });
+-
+-    after(function() {
+-      process.chdir('../');
+-      appHelper.teardown();
+-    });
+-
+-
+-    describe('requests to :controller/:method', function() {
+-
+-      it('should call the specified method of the specified controller', function(done) {
+-
+-        httpHelper.testRoute('get', 'test/index', function(err, response) {
+-          if (err) return done(new Error(err));
+-
+-          assert(response.body === 'index', Err.badResponse(response));
+-          done();
+-        });
+-      });
+-
+-    });
+-
+-    describe('REST default routes', function() {
+-
+-      describe('a get request to /:controller', function() {
+-
+-        it('should call the controller index method', function(done) {
+-
+-          httpHelper.testRoute('get', 'test', function(err, response) {
+-            if (err) return done(new Error(err));
+-
+-            assert(response.body === 'index', Err.badResponse(response));
+-            done();
+-          });
+-        });
+-      });
+-
+-      describe('a get request to /:controller/:id', function() {
+-
+-        it('should NOT call the controller\'s `find()` method', function(done) {
+-
+-          httpHelper.testRoute('get', 'test/1', function(err, response) {
+-            if (err) return done(new Error(err));
+-
+-            assert(response.body !== 'find', Err.badResponse(response));
+-            done();
+-          });
+-        });
+-        it('should call the controller\'s `findOne()` method', function(done) {
+-
+-          httpHelper.testRoute('get', 'test/1', function(err, response) {
+-            if (err) return done(new Error(err));
+-
+-            assert(response.body === 'findOne', Err.badResponse(response));
+-            done();
+-          });
+-        });
+-      });
+-
+-      describe('a get request to /:controller/create', function() {
+-
+-        it('should call the controller create method', function(done) {
+-
+-          httpHelper.testRoute('get', 'test/create', function(err, response) {
+-            if (err) return done(new Error(err));
+-
+-            assert(response.body === 'create', Err.badResponse(response));
+-            done();
+-          });
+-        });
+-      });
+-
+-      describe('a post request to /:controller/create', function() {
+-
+-        it('should call the controller create method', function(done) {
+-
+-          httpHelper.testRoute('post', 'test/create', function(err, response) {
+-            if (err) return done(new Error(err));
+-
+-            assert(response.body === 'create', Err.badResponse(response));
+-            done();
+-          });
+-        });
+-      });
+-
+-      describe('a put request to /:controller/:id', function() {
+-
+-        it('should call the controller update method', function(done) {
+-
+-          httpHelper.testRoute('put', 'test/1', function(err, response) {
+-            if (err) return done(new Error(err));
+-
+-            assert(response.body === 'update', Err.badResponse(response));
+-            done();
+-          });
+-        });
+-      });
+-
+-      describe('a delete request to /:controller/:id', function() {
+-
+-        it('should call the controller destroy method', function(done) {
+-
+-          httpHelper.testRoute('del', 'test/1', function(err, response) {
+-            if (err) return done(new Error(err));
+-
+-            assert(response.body === 'destroy', Err.badResponse(response));
+-            done();
+-          });
+-        });
+-      });
+-    });
+-  });
+-
+-});
+diff --git a/test/integration/router.defaultRocket.test.js b/test/integration/router.defaultRocket.test.js
+new file mode 100644
+index 0000000..a803d68
+--- /dev/null
++++ b/test/integration/router.defaultRocket.test.js
+@@ -0,0 +1,163 @@
++/**
++ * Module dependencies
++ */
++
++var util = require('util');
++var assert = require('assert');
++var httpHelper = require('./helpers/httpHelper.js');
++var appHelper = require('./helpers/appHelper');
++
++
++
++/**
++ * Errors
++ */
++
++var Err = {
++  badResponse: function(response) {
++    return 'Wrong server response!  Response :::\n' + util.inspect(response.body);
++  }
++};
++
++
++
++/**
++ * Tests
++ */
++
++describe('router :: ', function() {
++  describe('Default rocket routing', function() {
++    var appName = 'testApp';
++
++    before(function(done) {
++      appHelper.build(done);
++    });
++
++    beforeEach(function(done) {
++      appHelper.lift(function(err, sails) {
++        if (err) {
++          throw new Error(err);
++        }
++        sailsprocess = sails;
++        setTimeout(done, 100);
++      });
++    });
++
++    afterEach(function(done) {
++      sailsprocess.lower(function() {
++        setTimeout(done, 100);
++      });
++    });
++
++    after(function() {
++      process.chdir('../');
++      appHelper.teardown();
++    });
++
++
++    describe('requests to :rocket/:method', function() {
++
++      it('should call the specified method of the specified rocket', function(done) {
++
++        httpHelper.testRoute('get', 'test/index', function(err, response) {
++          if (err) return done(new Error(err));
++
++          assert(response.body === 'index', Err.badResponse(response));
++          done();
++        });
++      });
++
++    });
++
++    describe('REST default routes', function() {
++
++      describe('a get request to /:rocket', function() {
++
++        it('should call the rocket index method', function(done) {
++
++          httpHelper.testRoute('get', 'test', function(err, response) {
++            if (err) return done(new Error(err));
++
++            assert(response.body === 'index', Err.badResponse(response));
++            done();
++          });
++        });
++      });
++
++      describe('a get request to /:rocket/:id', function() {
++
++        it('should NOT call the rocket\'s `find()` method', function(done) {
++
++          httpHelper.testRoute('get', 'test/1', function(err, response) {
++            if (err) return done(new Error(err));
++
++            assert(response.body !== 'find', Err.badResponse(response));
++            done();
++          });
++        });
++        it('should call the rocket\'s `findOne()` method', function(done) {
++
++          httpHelper.testRoute('get', 'test/1', function(err, response) {
++            if (err) return done(new Error(err));
++
++            assert(response.body === 'findOne', Err.badResponse(response));
++            done();
++          });
++        });
++      });
++
++      describe('a get request to /:rocket/create', function() {
++
++        it('should call the rocket create method', function(done) {
++
++          httpHelper.testRoute('get', 'test/create', function(err, response) {
++            if (err) return done(new Error(err));
++
++            assert(response.body === 'create', Err.badResponse(response));
++            done();
++          });
++        });
++      });
++
++      describe('a post request to /:rocket/create', function() {
++
++        it('should call the rocket create method', function(done) {
++
++          httpHelper.testRoute('post', 'test/create', function(err, response) {
++            if (err) return done(new Error(err));
++
++            assert(response.body === 'create', Err.badResponse(response));
++            done();
++          });
++        });
++      });
++
++      describe('a put request to /:rocket/:id', function() {
++
++        it('should call the rocket update method', function(done) {
++
++          httpHelper.testRoute('put', 'test/1', function(err, response) {
++            if (err) return done(new Error(err));
++
++            assert(response.body === 'update', Err.badResponse(response));
++            done();
++          });
++        });
++      });
++
++      describe('a delete request to /:rocket/:id', function() {
++
++        it('should call the rocket destroy method', function(done) {
++
++          httpHelper.testRoute('del', 'test/1', function(err, response) {
++            if (err) return done(new Error(err));
++
++            assert(response.body === 'destroy', Err.badResponse(response));
++            done();
++          });
++        });
++      });
++    });
++  });
++
++});
+diff --git a/test/integration/router.specifiedRoutes.test.js b/test/integration/router.specifiedRoutes.test.js
+index dc8eb03..a8950fd 100644
+--- a/test/integration/router.specifiedRoutes.test.js
++++ b/test/integration/router.specifiedRoutes.test.js
+@@ -51,7 +51,7 @@ describe('router :: ', function() {
+             cors: true,
+           },
+           '/testRoute': {
+-            controller: 'test',
++            rocket: 'test',
+             action: 'verb',
+           },
+         });
+@@ -77,7 +77,7 @@ describe('router :: ', function() {
+ 			before(function() {
+ 				httpHelper.writeRoutes({
+ 					'/testRoute': {
+-						controller: 'test',
++						rocket: 'test',
+ 						action: 'verb'
+ 					}
+ 				});
+@@ -130,7 +130,7 @@ describe('router :: ', function() {
+ 			before(function() {
+ 				httpHelper.writeRoutes({
+ 					'get /testRoute': {
+-						controller: 'test',
++						rocket: 'test',
+ 						action: 'verb'
+ 					}
+ 				});
+@@ -162,7 +162,7 @@ describe('router :: ', function() {
+ 			before(function() {
+ 				httpHelper.writeRoutes({
+ 					'post /testRoute': {
+-						controller: 'test',
++						rocket: 'test',
+ 						action: 'verb'
+ 					}
+ 				});
+@@ -184,7 +184,7 @@ describe('router :: ', function() {
+ 			before(function() {
+ 				httpHelper.writeRoutes({
+ 					'put /testRoute': {
+-						controller: 'test',
++						rocket: 'test',
+ 						action: 'verb'
+ 					}
+ 				});
+@@ -206,7 +206,7 @@ describe('router :: ', function() {
+ 			before(function(){
+ 				httpHelper.writeRoutes({
+ 					'delete /testRoute': {
+-						controller: 'test',
++						rocket: 'test',
+ 						action: 'verb'
+ 					}
+ 				});
+@@ -229,7 +229,7 @@ describe('router :: ', function() {
+ 			before(function() {
+ 				httpHelper.writeRoutes({
+ 					'get /test/:category/:size': {
+-						controller: 'test',
++						rocket: 'test',
+ 						action: 'dynamic'
+ 					}
+ 				});
+@@ -259,7 +259,7 @@ describe('router :: ', function() {
+ 			before(function() {
+ 				httpHelper.writeRoutes({
+ 					'get /testRoute': {
+-						controller: 'test',
++						rocket: 'test',
+ 						action: 'verb'
+ 					}
+ 				});
+@@ -275,12 +275,12 @@ describe('router :: ', function() {
+ 			});
+ 		});
+ 
+-		describe('should accept case-insensitive controller key', function() {
++		describe('should accept case-insensitive rocket key', function() {
+ 
+ 			before(function() {
+ 				httpHelper.writeRoutes({
+ 					'get /testRoute': {
+-						controller: 'tEsT',
++						rocket: 'tEsT',
+ 						action: 'verb'
+ 					}
+ 				});
+@@ -301,7 +301,7 @@ describe('router :: ', function() {
+ 			before(function(){
+ 				httpHelper.writeRoutes({
+ 					'get /testRoute': {
+-						controller: 'test',
++						rocket: 'test',
+ 						action: 'capiTalleTTers'
+ 					}
+ 				});
+@@ -356,7 +356,7 @@ describe('router :: ', function() {
+         httpHelper.writeRoutes({
+           '/*': {
+             skipAssets: true,
+-            controller: 'test',
++            rocket: 'test',
+             action: 'index'
+           }
+         });
+@@ -450,7 +450,7 @@ describe('router :: ', function() {
+     describe('skipRegex /abc/', function() {
+ 
+       before(function(){
+-        var ROUTES_FILE_CONTENTS = 'module.exports.routes = {\'/*\': {skipRegex: /abc/,controller: \'test\',action: \'index\'}};';
++        var ROUTES_FILE_CONTENTS = 'module.exports.routes = {\'/*\': {skipRegex: /abc/,rocket: \'test\',action: \'index\'}};';
+         require('fs').writeFileSync('config/routes.js', ROUTES_FILE_CONTENTS);
+       });
+ 
+@@ -480,7 +480,7 @@ describe('router :: ', function() {
+     describe('skipRegex [/abc/, /def/]', function() {
+ 
+       before(function(){
+-        require('fs').writeFileSync('config/routes.js', "module.exports.routes = {'/*': {skipRegex: [/abc/,/def/],controller: 'test',action: 'index'}};");
++        require('fs').writeFileSync('config/routes.js', "module.exports.routes = {'/*': {skipRegex: [/abc/,/def/],rocket: 'test',action: 'index'}};");
+       });
+ 
+       it('should match /foo', function(done) {
+diff --git a/test/integration/router.viewRendering.test.js b/test/integration/router.viewRendering.test.js
+index 002c3f3..c061d0a 100644
+--- a/test/integration/router.viewRendering.test.js
++++ b/test/integration/router.viewRendering.test.js
+@@ -132,7 +132,7 @@ describe('router :: ', function() {
+         httpHelper.writeRoutes({});
+       });
+ 
+-      it('should respond to get request to :controller with the template at views/:controller/index.ejs', function(done) {
++      it('should respond to get request to :rocket with the template at views/:rocket/index.ejs', function(done) {
+ 
+         // Empty router file
+ 
+@@ -146,7 +146,7 @@ describe('router :: ', function() {
+         });
+       });
+ 
+-      it('should respond to get request to :controller/:action with the template at views/:controller/:action.ejs', function(done) {
++      it('should respond to get request to :rocket/:action with the template at views/:rocket/:action.ejs', function(done) {
+ 
+         httpHelper.testRoute('get', 'viewTest/create', function(err, response) {
+           if (err) {
+diff --git a/test/unit/app.getRouteFor.test.js b/test/unit/app.getRouteFor.test.js
+index 4f36555..7209f19 100644
+--- a/test/unit/app.getRouteFor.test.js
++++ b/test/unit/app.getRouteFor.test.js
+@@ -16,43 +16,43 @@ describe('app.getRouteFor()', function (){
+       globals: false,
+       loadHooks: [],
+       routes: {
+-        'get /signup': 'PageController.signup',
+-        'post /signup': 'UserController.signup',
+-        'post /*': 'UserController.signup',
+-        'get /': { controller: 'PageController', action: 'homepage' },
+-        'get /about': { target: 'PageController.about' },
+-        'get /admin': { target: 'PageController.adminDashboard' },
+-        'get /badmin': { target: 'PageController.admndashboard' },
+-        'get /wolves': 'WolfController.find',
+-        'get /wolves/:id': { target: 'WolfController.findOne' },
+-        'post /wolves': { controller: 'WolfController', action: 'create' },
+-        'options /wolves/test': { target: 'WolfController.CreaTe' },
++        'get /signup': 'PageRocket.signup',
++        'post /signup': 'UserRocket.signup',
++        'post /*': 'UserRocket.signup',
++        'get /': { rocket: 'PageRocket', action: 'homepage' },
++        'get /about': { target: 'PageRocket.about' },
++        'get /admin': { target: 'PageRocket.adminDashboard' },
++        'get /badmin': { target: 'PageRocket.admndashboard' },
++        'get /wolves': 'WolfRocket.find',
++        'get /wolves/:id': { target: 'WolfRocket.findOne' },
++        'post /wolves': { rocket: 'WolfRocket', action: 'create' },
++        'options /wolves/test': { target: 'WolfRocket.CreaTe' },
+       }
+     }, done);
+   });
+ 
+ 
+   it('should return appropriate route info dictionary with simplified usage', function () {
+-    var route = app.getRouteFor('PageController.signup');
++    var route = app.getRouteFor('PageRocket.signup');
+     assert.equal(route.method, 'get');
+     assert.equal(route.url, '/signup');
+   });
+ 
+   it('should return appropriate route info dictionary with expanded usage', function () {
+-    var route = app.getRouteFor({ target: 'PageController.signup' });
++    var route = app.getRouteFor({ target: 'PageRocket.signup' });
+     assert.equal(route.method, 'get');
+     assert.equal(route.url, '/signup');
+   });
+ 
+   it('should return the _first_ matching route', function () {
+-    var route = app.getRouteFor('UserController.signup');
++    var route = app.getRouteFor('UserRocket.signup');
+     assert.equal(route.method, 'post');
+     assert.equal(route.url, '/signup');
+   });
+ 
+   it('should return the _first_ matching route', function () {
+     try {
+-      app.getRouteFor('JuiceController.makeJuice');
++      app.getRouteFor('JuiceRocket.makeJuice');
+       assert(false, 'Should have thrown an error');
+     }
+     catch (e) {
+@@ -90,7 +90,7 @@ describe('app.getRouteFor()', function (){
+ 
+   it('should throw usage error (i.e. `e.code===\'E_USAGE\'`) if specified target string to search for has no dot', function (){
+     try {
+-      app.getRouteFor('SomeController');
++      app.getRouteFor('SomeRocket');
+       assert(false, 'Should have thrown an error');
+     }
+     catch (e) {
+@@ -98,20 +98,20 @@ describe('app.getRouteFor()', function (){
+     }
+   });
+ 
+-  it('should be able to match different syntaxes (routes that specify separate controller+action, or specifically specify a target)', function (){
+-    assert.equal( app.getRouteFor('WolfController.find').url, '/wolves' );
+-    assert.equal( app.getRouteFor('WolfController.find').method, 'get' );
++  it('should be able to match different syntaxes (routes that specify separate rocket+action, or specifically specify a target)', function (){
++    assert.equal( app.getRouteFor('WolfRocket.find').url, '/wolves' );
++    assert.equal( app.getRouteFor('WolfRocket.find').method, 'get' );
+ 
+-    assert.equal( app.getRouteFor('WolfController.findOne').url, '/wolves/:id' );
+-    assert.equal( app.getRouteFor('WolfController.findOne').method, 'get' );
++    assert.equal( app.getRouteFor('WolfRocket.findOne').url, '/wolves/:id' );
++    assert.equal( app.getRouteFor('WolfRocket.findOne').method, 'get' );
+ 
+-    assert.equal( app.getRouteFor('WolfController.create').url, '/wolves' );
+-    assert.equal( app.getRouteFor('WolfController.create').method, 'post' );
++    assert.equal( app.getRouteFor('WolfRocket.create').url, '/wolves' );
++    assert.equal( app.getRouteFor('WolfRocket.create').method, 'post' );
+   });
+ 
+   it('should respect case-sensitivity of action names', function (){
+-    assert.equal( app.getRouteFor('WolfController.CreaTe').url, '/wolves/test' );
+-    assert.equal( app.getRouteFor('WolfController.CreaTe').method, 'options' );
++    assert.equal( app.getRouteFor('WolfRocket.CreaTe').url, '/wolves/test' );
++    assert.equal( app.getRouteFor('WolfRocket.CreaTe').method, 'options' );
+   });
+ 
+ });
+diff --git a/test/unit/app.getUrlFor.test.js b/test/unit/app.getUrlFor.test.js
+index fe79b45..108cbae 100644
+--- a/test/unit/app.getUrlFor.test.js
++++ b/test/unit/app.getUrlFor.test.js
+@@ -16,25 +16,25 @@ describe('app.getUrlFor()', function (){
+       globals: false,
+       loadHooks: [],
+       routes: {
+-        'get /signup': 'PageController.signup',
+-        'post /login': 'UserController.login',
+-        'get /login': 'PageController.login',
+-        'post /*': 'UserController.login'
++        'get /signup': 'PageRocket.signup',
++        'post /login': 'UserRocket.login',
++        'get /login': 'PageRocket.login',
++        'post /*': 'UserRocket.login'
+       }
+     }, done);
+   });
+ 
+ 
+   it('should return appropriate route URL with simplified usage', function () {
+-    assert.equal( app.getUrlFor('PageController.signup'), '/signup' );
++    assert.equal( app.getUrlFor('PageRocket.signup'), '/signup' );
+   });
+ 
+   it('should return appropriate route URL with expanded usage', function () {
+-    assert.equal( app.getUrlFor({ target: 'PageController.login' }), '/login' );
++    assert.equal( app.getUrlFor({ target: 'PageRocket.login' }), '/login' );
+   });
+ 
+   it('should return the _first_ matching route URL for the given target', function () {
+-    assert.equal( app.getUrlFor('UserController.login'), '/login' );
++    assert.equal( app.getUrlFor('UserRocket.login'), '/login' );
+   });
+ 
+ });

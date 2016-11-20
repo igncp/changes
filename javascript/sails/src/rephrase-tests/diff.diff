@@ -1,0 +1,291 @@
+diff --git a/test/unit/app.getRouteFor.test.js b/test/unit/app.getRouteFor.test.js
+index 4f36555..396c22c 100644
+--- a/test/unit/app.getRouteFor.test.js
++++ b/test/unit/app.getRouteFor.test.js
+@@ -7,7 +7,7 @@ var util = require('util');
+ var Sails = require('../../lib').constructor;
+ 
+ 
+-describe('app.getRouteFor()', function (){
++describe('app.getRouteFor() method', function (){
+ 
+   var app;
+   before(function (done){
+@@ -32,25 +32,25 @@ describe('app.getRouteFor()', function (){
+   });
+ 
+ 
+-  it('should return appropriate route info dictionary with simplified usage', function () {
++  it('must return an object with the method and the url from the route', function () {
+     var route = app.getRouteFor('PageController.signup');
+     assert.equal(route.method, 'get');
+     assert.equal(route.url, '/signup');
+   });
+ 
+-  it('should return appropriate route info dictionary with expanded usage', function () {
++  it('must accept as an argument an object with the target [controller].[action]', function () {
+     var route = app.getRouteFor({ target: 'PageController.signup' });
+     assert.equal(route.method, 'get');
+     assert.equal(route.url, '/signup');
+   });
+ 
+-  it('should return the _first_ matching route', function () {
++  it('must the first route in the priority list if multiple (e.g. in this case, also /* exists as an url)', function () {
+     var route = app.getRouteFor('UserController.signup');
+     assert.equal(route.method, 'post');
+     assert.equal(route.url, '/signup');
+   });
+ 
+-  it('should return the _first_ matching route', function () {
++  it('must throw "E_NOT_FOUND" when an invalid [controller].[action] is provided', function () {
+     try {
+       app.getRouteFor('JuiceController.makeJuice');
+       assert(false, 'Should have thrown an error');
+@@ -62,7 +62,7 @@ describe('app.getRouteFor()', function (){
+     }
+   });
+ 
+-  it('should throw usage error (i.e. `e.code===\'E_USAGE\'`) if target to search for not specified or is invalid', function (){
++  it('must throw "E_USAGE" if no argument is passed or it has an unexpected type or shape', function (){
+     try {
+       app.getRouteFor();
+       assert(false, 'Should have thrown an error');
+@@ -88,7 +88,7 @@ describe('app.getRouteFor()', function (){
+     }
+   });
+ 
+-  it('should throw usage error (i.e. `e.code===\'E_USAGE\'`) if specified target string to search for has no dot', function (){
++  it('must throw if no action is provided', function (){
+     try {
+       app.getRouteFor('SomeController');
+       assert(false, 'Should have thrown an error');
+@@ -98,20 +98,19 @@ describe('app.getRouteFor()', function (){
+     }
+   });
+ 
+-  it('should be able to match different syntaxes (routes that specify separate controller+action, or specifically specify a target)', function (){
++  it('must find routes regardless if they were defined using [controller].[action] or with target', function (){
+     assert.equal( app.getRouteFor('WolfController.find').url, '/wolves' );
+     assert.equal( app.getRouteFor('WolfController.find').method, 'get' );
+ 
+     assert.equal( app.getRouteFor('WolfController.findOne').url, '/wolves/:id' );
+     assert.equal( app.getRouteFor('WolfController.findOne').method, 'get' );
+-
+-    assert.equal( app.getRouteFor('WolfController.create').url, '/wolves' );
+-    assert.equal( app.getRouteFor('WolfController.create').method, 'post' );
+   });
+ 
+-  it('should respect case-sensitivity of action names', function (){
++  it('must be case sensitive regarding the actions name', function (){
+     assert.equal( app.getRouteFor('WolfController.CreaTe').url, '/wolves/test' );
+     assert.equal( app.getRouteFor('WolfController.CreaTe').method, 'options' );
++    assert.equal( app.getRouteFor('WolfController.create').url, '/wolves' );
++    assert.equal( app.getRouteFor('WolfController.create').method, 'post' );
+   });
+ 
+ });
+diff --git a/test/unit/app.getUrlFor.test.js b/test/unit/app.getUrlFor.test.js
+index fe79b45..6f801bf 100644
+--- a/test/unit/app.getUrlFor.test.js
++++ b/test/unit/app.getUrlFor.test.js
+@@ -7,7 +7,7 @@ var util = require('util');
+ var Sails = require('../../lib').constructor;
+ 
+ 
+-describe('app.getUrlFor()', function (){
++describe('app.getUrlFor() helper method', function (){
+ 
+   var app;
+   before(function (done){
+@@ -25,17 +25,27 @@ describe('app.getUrlFor()', function (){
+   });
+ 
+ 
+-  it('should return appropriate route URL with simplified usage', function () {
++  it('must return a well formatted url when the argument is a string in a form of [controller].[action]', function () {
+     assert.equal( app.getUrlFor('PageController.signup'), '/signup' );
+   });
+ 
+-  it('should return appropriate route URL with expanded usage', function () {
++  it('must return a well formatted url when the argument is an object with the `target` prop', function () {
+     assert.equal( app.getUrlFor({ target: 'PageController.login' }), '/login' );
+   });
+ 
+-  it('should return the _first_ matching route URL for the given target', function () {
++  it('must return the fist occurrence un the priority list when multiple options are valid', function () {
+     assert.equal( app.getUrlFor('UserController.login'), '/login' );
+   });
+ 
++  it('must return the fist occurrence un the priority list when multiple options are valid', function () {
++    try {
++      assert.equal( app.getUrlFor('UserController.foo'), '/login' );
++      assert(false, "should not reach here");
++    } catch (e) {
++      if (e.code !== "E_NOT_FOUND") {
++        assert(false, "should not throw this error");
++      }
++    }
++  });
+ });
+ 
+diff --git a/test/unit/app.initializeHooks.test.js b/test/unit/app.initializeHooks.test.js
+index 3027617..e1eb79c 100644
+--- a/test/unit/app.initializeHooks.test.js
++++ b/test/unit/app.initializeHooks.test.js
+@@ -21,46 +21,45 @@ var supertest = require('supertest');
+ // $Sails.get(function (_sails) { sails = _sails; });
+ 
+ 
+-describe('app.initializeHooks()', function() {
++describe('app.initializeHooks() function', function() {
+ 
+-  describe('with no hooks', function() {
++  describe('with all hooks disabled', function() {
+     var sails = $Sails.load.withAllHooksDisabled();
+-    it('hooks should be exposed on the `sails` global', function() {
++    it('a hooks object should be present in the sails instance, even if none is active', function() {
+       sails.hooks.should.be.an.Object;
+     });
+   });
+ 
+ 
+ 
+-  describe('with all core hooks and default config', function() {
++  describe('using all the hooks from the core and the default configuration', function() {
+     var sails = $Sails.load();
+-    it('should expose hooks on the `sails` global', function() {
++    it('must contain a hooks property', function() {
+       sails.hooks.should.be.an.Object;
+     });
+-    it('should expose at least the expected core hooks', function() {
+-
++    it('must contain the expected number of hooks', function() {
+       var intersection = _.intersection(_.keys(sails.hooks), _.keys(constants.EXPECTED_DEFAULT_HOOKS));
+       assert.deepEqual(intersection, _.keys(constants.EXPECTED_DEFAULT_HOOKS),  'Missing expected default hooks');
+     });
+   });
+ 
+-  describe('with the grunt hook set to boolen false', function() {
++  describe('with the `grunt` hook disabled, using a boolean', function() {
+     var sails = $Sails.load({hooks: {grunt: false}});
+-    it('should expose hooks on the `sails` global', function() {
++    it('must contain a `hooks` property', function() {
+       sails.hooks.should.be.an.Object;
+     });
+-    it('should expose all the core hooks except for Grunt', function() {
++    it('must contain the expected number of hooks (all minus grunt)', function() {
+       var intersection = _.intersection(_.keys(sails.hooks), _.keys(constants.EXPECTED_DEFAULT_HOOKS));
+       assert.deepEqual(intersection, _.without(_.keys(constants.EXPECTED_DEFAULT_HOOKS), 'grunt'),  'Missing expected default hooks');
+     });
+   });
+ 
+-  describe('with the grunt hook set to the string "false"', function() {
++  describe('with the `grunt` hook disabled, using a string', function() {
+     var sails = $Sails.load({hooks: {grunt: "false"}});
+-    it('should expose hooks on the `sails` global', function() {
++    it('must contain a `hooks` property', function() {
+       sails.hooks.should.be.an.Object;
+     });
+-    it('should expose all the core hooks except for Grunt', function() {
++    it('must contain the expected number of hooks (all minus grunt)', function() {
+       var intersection = _.intersection(_.keys(sails.hooks), _.keys(constants.EXPECTED_DEFAULT_HOOKS));
+       assert.deepEqual(intersection, _.without(_.keys(constants.EXPECTED_DEFAULT_HOOKS), 'grunt'),  'Missing expected default hooks');
+     });
+@@ -69,43 +68,24 @@ describe('app.initializeHooks()', function() {
+ 
+ 
+ 
+-  describe('configured with a custom hook called `noop`', function() {
++  describe('passing a custom hook function as one of the hooks', function() {
+     var sails = $Sails.load({
+       hooks: {
+         noop: customHooks.NOOP
+       }
+     });
+ 
+-    it('should expose `noop`', function() {
++    it('must have the custom hook present', function() {
+       sails.hooks.should.have
+         .property('noop');
+     });
+-    it('should also expose the expected core hooks', function() {
++    it('must contain the rest of the hooks in the same property', function() {
+       var intersection = _.intersection(Object.keys(sails.hooks), _.keys(constants.EXPECTED_DEFAULT_HOOKS));
+       assert.deepEqual(intersection, _.keys(constants.EXPECTED_DEFAULT_HOOKS),  'Missing expected default hooks');
+     });
+   });
+ 
+-
+-
+-  describe('configured with a hook (`noop2`), but not its dependency (`noop`)', function() {
+-    var sails = $Sails.load.expectFatalError({
+-      hooks: {
+-
+-        // This forced failure is only temporary--
+-        // very hard to test right now as things stand.
+-        whadga: function(sails) {
+-          throw 'temporary forced failure to simulate dependency issue';
+-        },
+-
+-        noop2: customHooks.NOOP2
+-      }
+-    });
+-  });
+-
+-
+-
+-  describe('configured with a hook that always throws', function() {
++  describe('passing a hook that throws an Error', function() {
+     var sails = $Sails.load.expectFatalError({
+       hooks: {
+         // This forced failure is only temporary--
+@@ -116,7 +96,7 @@ describe('app.initializeHooks()', function() {
+   });
+ 
+ 
+-  describe('configured with a custom hook with a `defaults` object', function() {
++  describe('passing a hook that contains a `defaults` property which contains an `inky` property', function() {
+     var sails = $Sails.load({
+       hooks: {
+         defaults_obj: customHooks.DEFAULTS_OBJ
+@@ -126,19 +106,19 @@ describe('app.initializeHooks()', function() {
+       }
+     });
+ 
+-    it('should add a `foo` key to sails config', function() {
++    it('must add the properties not present in the config', function() {
+       assert(sails.config.foo == 'bar');
+     });
+-    it('should add an `inky.dinky` key to sails config', function() {
++    it('must add the configs present in a recursive way', function() {
+       assert(sails.config.inky.dinky == 'doo');
+     });
+-    it('should keep the existing `inky.pinky` key to sails config', function() {
++    it('must not add a config from the defaults if it is already set in the config', function() {
+       assert(sails.config.inky.pinky == 'boo');
+     });
+ 
+   });
+ 
+-  describe('configured with a custom hook with a `defaults` function', function() {
++  describe('passing a hook with a function in the `defaults` property', function() {
+     var sails = $Sails.load({
+       hooks: {
+         defaults_fn: customHooks.DEFAULTS_FN
+@@ -148,13 +128,13 @@ describe('app.initializeHooks()', function() {
+       }
+     });
+ 
+-    it('should add a `foo` key to sails config', function() {
++    it('must add the properties returned by the `defaults` function that are not present in the config', function() {
+       assert(sails.config.foo == 'bar');
+     });
+-    it('should add an `inky.dinky` key to sails config', function() {
++    it('must look recursively for defaults not present in the config', function() {
+       assert(sails.config.inky.dinky == 'doo');
+     });
+-    it('should keep the existing `inky.pinky` key to sails config', function() {
++    it('must not add (recursive) properties that are already in the config', function() {
+       assert(sails.config.inky.pinky == 'boo');
+     });
+ 
