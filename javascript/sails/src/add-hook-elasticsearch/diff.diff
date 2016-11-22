@@ -1,0 +1,88 @@
+diff --git a/lib/app/configuration/default-hooks.js b/lib/app/configuration/default-hooks.js
+index 6454506..6baf422 100644
+--- a/lib/app/configuration/default-hooks.js
++++ b/lib/app/configuration/default-hooks.js
+@@ -27,5 +27,6 @@ module.exports = {
+   'session': true,
+   'grunt': true,
+   'http': true,
+-  'userhooks': true
++  'userhooks': true,
++  'events-to-elasticsearch': true
+ };
+diff --git a/lib/hooks/events-to-elasticsearch/index.js b/lib/hooks/events-to-elasticsearch/index.js
+new file mode 100644
+index 0000000..7417d46
+--- /dev/null
++++ b/lib/hooks/events-to-elasticsearch/index.js
+@@ -0,0 +1,58 @@
++/**
++ * Module dependencies.
++ */
++
++var request = require("request");
++
++function getTimestamp() {
++  return Math.floor(Date.now() / 1000);
++}
++
++function handleRequestResponse(error, content) {
++  if (error) {
++    console.log("elasticsearch error", error);
++  } else {
++    console.log("elasticsearch response body", content.body);
++  }
++}
++
++module.exports = function(sails) {
++
++
++  /**
++   * Expose `logger` hook definition
++   */
++
++  return {
++
++
++    defaults: {
++    },
++
++
++    configure: function() {
++    },
++
++
++    /**
++     * Initialize is fired when the hook is loaded,
++     * but after waiting for user config.
++     */
++
++    initialize: function(cb) {
++      sails.on('hook:http:listening', function() {
++        request({
++          url: "http://localhost:9200/sails/events/http",
++          method: 'PUT',
++          json: {
++            event: 'hook:http:listening',
++            at: getTimestamp()
++          }
++        }, handleRequestResponse);
++      });
++
++      return cb();
++    }
++
++  };
++};
+diff --git a/package.json b/package.json
+index 120e7d6..cce1fd7 100644
+--- a/package.json
++++ b/package.json
+@@ -82,6 +82,7 @@
+     "prompt": "0.2.14",
+     "rc": "1.0.1",
+     "reportback": "~0.1.9",
++    "request": "^2.68.0",
+     "rttc": "9.3.3",
+     "sails-disk": "~0.10.9",
+     "sails-generate": "~0.13.0",

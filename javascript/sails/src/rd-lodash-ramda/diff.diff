@@ -98,6 +98,185 @@ index 44f5e23..f737cdb 100644
        var sailsOpts = _cleanOptions(options);
  
        it(', sails should deliberately terminate process', function (done) {
+diff --git a/test/hooks/pubsub/publishAdd.test.js b/test/hooks/pubsub/publishAdd.test.js
+index 81eecc3..bf7e7f8 100644
+--- a/test/hooks/pubsub/publishAdd.test.js
++++ b/test/hooks/pubsub/publishAdd.test.js
+@@ -4,7 +4,7 @@
+ 
+ var util = require('util');
+ var assert = require('assert');
+-var _ = require('lodash');
++var R = require('ramda');
+ var async = require('async');
+ var Sails = require('../../../lib').Sails;
+ var socketIOClient = require('socket.io-client');
+@@ -77,7 +77,7 @@ describe('Pubsub hook', function (){
+       io.sails.autoConnect = false;
+       io.sails.environment = 'production'; // (to disable logs from sails.io client)
+       io.sails.url = 'http://localhost:1535';
+-      async.each(_.keys(clientSocks), function (key, next){
++      async.each(Object.keys(clientSocks), function (key, next){
+         clientSocks[key] = io.sails.connect();
+         clientSocks[key].on('connect', function (){
+           next();
+@@ -87,7 +87,7 @@ describe('Pubsub hook', function (){
+ 
+     // Use the endpoints defined above to subscribe sockets to a Dock record with id=1.
+     before(function (done){
+-      async.each(_.keys(clientSocks), function (key, next){
++      async.each(Object.keys(clientSocks), function (key, next){
+         clientSocks[key].put('/dock/1/subscribe', function(body, jwr) {
+           if (jwr.error) {
+             return next(new Error('Error received on jwr.  JWR:'+util.inspect(jwr, {depth: null}) ));
+@@ -100,12 +100,12 @@ describe('Pubsub hook', function (){
+ 
+     // All sockets listen for `dock` events
+     before(function (){
+-      _.each(clientSocks, function (socket, key) {
++      R.forEach(function (socket, key) {
+         socket.on('dock', function (event){
+           socket._receivedDockEvents = socket._receivedDockEvents || [];
+           socket._receivedDockEvents.push(event);
+         });
+-      });
++      }, clientSocks);
+     });
+ 
+ 
+@@ -146,12 +146,12 @@ describe('Pubsub hook', function (){
+       });
+ 
+       it('should notify all client sockets subscribed to parent record', function (){
+-        _.each(clientSocks, function (socket, key) {
++        R.forEach(function (socket, key) {
+           assert.equal(socket._receivedDockEvents.length, 1);
+           assert.equal(socket._receivedDockEvents[0].verb, 'addedTo');
+           assert.equal(socket._receivedDockEvents[0].id, 1);
+           assert.equal(socket._receivedDockEvents[0].addedId, 47);
+-        });
++        }, clientSocks);
+       });
+     });
+ 
+@@ -171,14 +171,14 @@ describe('Pubsub hook', function (){
+       });
+ 
+       it('should notify client sockets subscribed to parent record', function (){
+-        _.each(clientSocks, function (socket, key) {
++        R.forEach(function (socket, key) {
+           assert.equal(socket._receivedDockEvents.length, 2);
+           assert.equal(socket._receivedDockEvents[1].verb, 'addedTo');
+           assert.equal(socket._receivedDockEvents[1].id, 1);
+           assert.equal(socket._receivedDockEvents[1].addedId, 52);
+           assert.equal(socket._receivedDockEvents[1].added.id, 52);
+           assert.equal(socket._receivedDockEvents[1].added.name, 'The Silver Goose');
+-        });
++        }, clientSocks);
+       });
+     });
+ 
+@@ -204,9 +204,9 @@ describe('Pubsub hook', function (){
+       });
+ 
+       it('should NOT notify any of the client sockets subscribed to parent record', function (){
+-        _.each(clientSocks, function (socket, key) {
++        R.forEach(function (socket, key) {
+           assert.equal(socket._receivedDockEvents.length, 2);
+-        });
++        }, clientSocks);
+       });
+     });
+ 
+diff --git a/test/hooks/pubsub/publishCreate.test.js b/test/hooks/pubsub/publishCreate.test.js
+index 1c40dbe..72c6840 100644
+--- a/test/hooks/pubsub/publishCreate.test.js
++++ b/test/hooks/pubsub/publishCreate.test.js
+@@ -3,7 +3,7 @@
+  */
+ 
+ var assert = require('assert');
+-var _ = require('lodash');
++var R = require('ramda');
+ var async = require('async');
+ var Sails = require('../../../lib').Sails;
+ var socketIOClient = require('socket.io-client');
+@@ -73,7 +73,7 @@ describe('Pubsub hook', function (){
+       io.sails.autoConnect = false;
+       io.sails.environment = 'production'; // (to disable logs from sails.io client)
+       io.sails.url = 'http://localhost:1535';
+-      async.each(_.keys(clientSocks), function (key, next){
++      async.each(Object.keys(clientSocks), function (key, next){
+         clientSocks[key] = io.sails.connect();
+         clientSocks[key].on('connect', function (){
+           next();
+@@ -83,7 +83,7 @@ describe('Pubsub hook', function (){
+ 
+     // Use the endpoints defined above to subscribe sockets to the Pet class room
+     before(function (done){
+-      async.each(_.keys(clientSocks), function (key, next){
++      async.each(Object.keys(clientSocks), function (key, next){
+         clientSocks[key].get('/watch', function(body, jwr) {
+           if (jwr.error) return next(err);
+           next();
+@@ -94,12 +94,12 @@ describe('Pubsub hook', function (){
+ 
+     // All sockets listen for `pet` events
+     before(function (){
+-      _.each(clientSocks, function (socket, key) {
++      R.forEach(function (socket, key) {
+         socket.on('pet', function (event){
+           socket._receivedPetEvents = socket._receivedPetEvents || [];
+           socket._receivedPetEvents.push(event);
+         });
+-      });
++      }, clientSocks);
+     });
+ 
+ 
+@@ -137,11 +137,11 @@ describe('Pubsub hook', function (){
+       });
+ 
+       it('should notify all client sockets watching the model class', function (){
+-        _.each(clientSocks, function (socket, key) {
++        R.forEach(function (socket, key) {
+           assert.equal(socket._receivedPetEvents.length, 1);
+           assert.equal(socket._receivedPetEvents[0].verb, 'created');
+           assert.equal(socket._receivedPetEvents[0].id, 1);
+-        });
++        }, clientSocks);
+       });
+     });
+ 
+diff --git a/test/hooks/views/skipAssets.test.js b/test/hooks/views/skipAssets.test.js
+index 09b10fc..e751936 100644
+--- a/test/hooks/views/skipAssets.test.js
++++ b/test/hooks/views/skipAssets.test.js
+@@ -4,13 +4,13 @@
+ 
+ var path = require('path');
+ var util = require('util');
+-var _ = require('lodash');
++var R = require('ramda');
+ var request = require('request');
+ var MProcess = require('machinepack-process');
+ var MFilesystem = require('machinepack-fs');
+ var testSpawningSailsLiftChildProcessInCwd = require('../../helpers/test-spawning-sails-lift-child-process-in-cwd');
+ 
+-
++var isString = R.is(String)
+ 
+ 
+ describe('skipAssets', function() {
+@@ -69,7 +69,7 @@ describe('skipAssets', function() {
+             }, function(err, response, body) {
+               if (err) { return done(err); }
+               try {
+-                if (!_.isString(response.headers['content-type'])) {
++                if (!isString(response.headers['content-type'])) {
+                   return done(new Error('Expected a response content-type header when requesting an asset. `skipAssets` seems to be failing silently!'));
+                 }
+                 if (!response.headers['content-type'].match(/application\/javascript/)) {
 diff --git a/test/integration/new.test.js b/test/integration/new.test.js
 index c4fd5ce..6be2935 100644
 --- a/test/integration/new.test.js

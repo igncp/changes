@@ -569,6 +569,44 @@ EOF
 
 # js END
 
+# jvm START
+
+if ! type java > /dev/null 2>&1 ; then
+  sudo add-apt-repository -y ppa:webupd8team/java
+  sudo apt-get update
+  echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
+  sudo apt-get install -y oracle-java8-installer
+fi
+
+if [ ! -d /usr/local/lib/elasticsearch ]; then
+  ELASTIC=elasticsearch-5.0.1
+  ELASTIC_FILE="$ELASTIC".tar.gz
+  cd ~
+  curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/$ELASTIC_FILE
+  tar -xvf $ELASTIC_FILE
+  rm $ELASTIC_FILE
+  sudo mv $ELASTIC /usr/local/lib/elasticsearch
+fi
+echo "export PATH=\$PATH:/usr/local/lib/elasticsearch/bin/" >> ~/.bashrc
+
+if [ ! -d /usr/local/lib/kibana ]; then
+  cd ~
+  KIBANA=kibana-5.0.1-linux-x86_64
+  KIBANA_FILE="$KIBANA".tar.gz
+  wget https://artifacts.elastic.co/downloads/kibana/$KIBANA_FILE
+  sha1sum $KIBANA_FILE
+  tar -xzf $KIBANA_FILE
+  mv $KIBANA kibana
+  rm $KIBANA_FILE
+  sudo mv kibana /usr/local/lib/
+fi
+echo "export PATH=\$PATH:/usr/local/lib/kibana/bin" >> ~/.bashrc
+cat >> ~/.bash_aliases <<"EOF"
+alias Kibana='kibana -H 0.0.0.0'
+EOF
+
+# jvm END
+
 # custom START
 
 cat >> ~/.vimrc <<"EOF"
