@@ -1,36 +1,90 @@
 diff --git a/lib/app/configuration/default-hooks.js b/lib/app/configuration/default-hooks.js
-index 6454506..6baf422 100644
+index 6454506..b0f590e 100644
 --- a/lib/app/configuration/default-hooks.js
 +++ b/lib/app/configuration/default-hooks.js
-@@ -27,5 +27,6 @@ module.exports = {
-   'session': true,
-   'grunt': true,
-   'http': true,
--  'userhooks': true
-+  'userhooks': true,
-+  'events-to-elasticsearch': true
- };
+@@ -9,6 +9,7 @@
+ 
+ module.exports = {
+   'moduleloader': true,
++  'events-to-elasticsearch': true,
+   'logger': true,
+   'request': true,
+   'orm': 'sails-hook-orm',
 diff --git a/lib/hooks/events-to-elasticsearch/index.js b/lib/hooks/events-to-elasticsearch/index.js
 new file mode 100644
-index 0000000..7417d46
+index 0000000..22852ba
 --- /dev/null
 +++ b/lib/hooks/events-to-elasticsearch/index.js
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,106 @@
 +/**
 + * Module dependencies.
 + */
 +
 +var request = require("request");
 +
-+function getTimestamp() {
-+  return Math.floor(Date.now() / 1000);
-+}
++var events = [
++  'elasticsearch-listeners-added',
++  'hook:blueprints:loaded',
++  'hook:controllers:loaded',
++  'hook:cors:loaded',
++  'hook:csrf:loaded',
++  'hook:enforceRestfulSesssions:checked',
++  'hook:events-to-elasticsearch:loaded',
++  'hook:grunt:done',
++  'hook:grunt:error',
++  'hook:grunt:loaded',
++  'hook:http:listening',
++  'hook:http:loaded',
++  'hook:i18n:loaded',
++  'hook:index.js:loaded',
++  'hook:logger:loaded',
++  'hook:moduleloader:loaded',
++  'hook:policies:bound',
++  'hook:policies:loaded',
++  'hook:pubsub:loaded',
++  'hook:pubsub:reloaded',
++  'hook:request:loaded',
++  'hook:responses:loaded',
++  'hook:services:loaded',
++  'hook:session:loaded',
++  'hook:userconfig:loaded',
++  'hook:userhooks:loaded',
++  'hook:views:loaded',
++  'hooks:builtIn:ready',
++  'lifted',
++  'lower',
++  'middleware:registered',
++  'ready',
++  'route:typeUnknown',
++  'router:after',
++  'router:before',
++  'router:bind',
++  'router:request:404',
++  'router:request:500',
++  'router:reset',
++  'router:route',
++  'router:unbind',
++];
 +
-+function handleRequestResponse(error, content) {
++function handleRequestResponse(error) {
 +  if (error) {
 +    console.log("elasticsearch error", error);
-+  } else {
-+    console.log("elasticsearch response body", content.body);
++  }
++}
++
++function postToES(sails, event) {
++  return function(data) {
++    sails.log.debug("Adding " + event + " to elasticsearch");
++    request({
++      url: "http://localhost:9200/sails/events",
++      method: 'POST',
++      json: true,
++      body: {
++        event: event,
++        at: Date.now(),
++        data: data || '',
++      }
++    }, handleRequestResponse);
 +  }
 +}
 +
@@ -58,17 +112,11 @@ index 0000000..7417d46
 +     */
 +
 +    initialize: function(cb) {
-+      sails.on('hook:http:listening', function() {
-+        request({
-+          url: "http://localhost:9200/sails/events/http",
-+          method: 'PUT',
-+          json: {
-+            event: 'hook:http:listening',
-+            at: getTimestamp()
-+          }
-+        }, handleRequestResponse);
++      events.forEach(function(e) {
++        sails.on(e, postToES(sails, e));
 +      });
 +
++      sails.emit('elasticsearch-listeners-added');
 +      return cb();
 +    }
 +
